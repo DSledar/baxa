@@ -20,9 +20,9 @@ class BakhaCloudManager {
 
     init() {
         try {
-            if (typeof firebase !== 'undefined' && FIREBASE_CONFIG.apiKey !== "YOUR_FIREBASE_API_KEY") {
+            if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "REPLACE_ME") {
                 if (!firebase.apps.length) {
-                    firebase.initializeApp(FIREBASE_CONFIG);
+                    firebase.initializeApp(firebaseConfig);
                 }
                 this.auth = firebase.auth();
                 this.db = firebase.database();

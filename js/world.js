@@ -61,7 +61,77 @@ class BarzanWorld {
         this.buildTemple();
         this.buildFrostCave();
         this.buildAmbientParticles();
+
+        this.buildNPCs();
     }
+
+    buildNPCs() {
+        this.npcs = [];
+        // Wise Old Man (پیرەمێردی زانا) near Village Square
+        const wiseMan = this.createHumanoidNPC(0xd1d5db, 0x1e3a8a, true);
+        wiseMan.position.set(-2.6, 0, -10.5);
+        wiseMan.rotation.y = 0.4;
+        this.scene.add(wiseMan);
+        this.npcs.push(wiseMan);
+        this.obstacles.push({ x: -2.6, z: -10.5, r: 0.55 });
+
+        // Village Blacksmith (ئاسنگەری گوند) near Butcher Shop / Forge
+        const blacksmith = this.createHumanoidNPC(0x3f2e21, 0x7c2d12, false);
+        blacksmith.position.set(3.2, 0, -4.5);
+        blacksmith.rotation.y = -0.5;
+        this.scene.add(blacksmith);
+        this.npcs.push(blacksmith);
+        this.obstacles.push({ x: 3.2, z: -4.5, r: 0.55 });
+    }
+
+    createHumanoidNPC(hairColor, robeColor, hasStaff) {
+        const g = new THREE.Group();
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xd6a584, roughness: 0.75 });
+        const robeMat = new THREE.MeshStandardMaterial({ color: robeColor, roughness: 0.85 });
+        const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.9 });
+
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.3, 10), robeMat);
+        body.position.y = 0.65;
+        body.castShadow = true;
+        g.add(body);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skinMat);
+        head.position.y = 1.5;
+        head.castShadow = true;
+        g.add(head);
+
+        const beard = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.32, 8), hairMat);
+        beard.position.set(0, 1.32, 0.14);
+        beard.rotation.x = Math.PI;
+        g.add(beard);
+
+        if (hasStaff) {
+            const staff = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.03, 0.035, 1.85, 8),
+                new THREE.MeshStandardMaterial({ color: 0x451a03 })
+            );
+            staff.position.set(0.38, 0.92, 0.15);
+            g.add(staff);
+
+            const orb = new THREE.Mesh(
+                new THREE.SphereGeometry(0.08, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            );
+            orb.position.set(0.38, 1.88, 0.15);
+            g.add(orb);
+        } else {
+            // Blacksmith hammer
+            const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.65, 6), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+            handle.position.set(-0.36, 0.95, 0.2);
+            handle.rotation.x = 0.8;
+            g.add(handle);
+            const hammerHead = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.26), new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.8 }));
+            hammerHead.position.set(-0.36, 1.15, 0.42);
+            g.add(hammerHead);
+        }
+        return g;
+    }
+
 
     addLantern(x, y, z, color = 0xf59e0b, intensity = 2.0) {
         const g = new THREE.Group();

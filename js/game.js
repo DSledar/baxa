@@ -459,7 +459,12 @@ window.addEventListener('keydown', (e) => {
 });
 
 canvas.addEventListener('dblclick', () => {
-    if (canvas.requestPointerLock) canvas.requestPointerLock();
+    try {
+        if (canvas.requestPointerLock) {
+            const p = canvas.requestPointerLock();
+            if (p && p.catch) p.catch(() => {});
+        }
+    } catch (e) {}
 });
 
 // UI Button Bindings
