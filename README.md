@@ -1,16 +1,12 @@
 # بەخەی قەساب 3D (Bakha the Butcher 3D Action RPG)
 
-A free-roam First-Person / Third-Person 3D Action RPG built with **Three.js (WebGL + UnrealBloomPass + Custom GLSL Shaders)**, **Bootstrap 5 RTL**, **Web Audio API**, and **Firebase**.
+![Bakha the Wolf Butcher](assets/bakha_portrait.jpg)
 
-## Features
-- **Free-Roam 3D World**: Explore Bakha's Butcher Shop, Barzan Village, Dark Forest, Ancient Stone Temple, and the Frost Cave Boss Arena.
-- **Toggleable FPP / TPP**: Press `V` or click the camera button to switch seamlessly between First-Person and Third-Person perspectives.
-- **Real-Time Cleaver Combat**: Swing with `Space`, stun enemies with Wolf Howl (`Q`), unleash Blood Rage (`R`), dodge (`C`), and heal with roasted meat (`E`).
-- **Expanded 8-Chapter Sorani Kurdish Story**: All 8 chapters with additional tactical choices and a **3-Phase Father of Darkness Boss Fight**.
-- **Firebase Cloud Saves & Leaderboard**: Google Sign-In, Realtime Database saves, and Honor Leaderboard (with automatic `localStorage` fallback).
+A free-roam First-Person / Third-Person 3D Action RPG built with **Three.js (WebGL + UnrealBloomPass + Custom GLSL Shaders)**, **Bootstrap 5 RTL**, **Web Audio API (Kurdish Daf & Oud Maqam)**, and **Firebase**.
 
-## GitHub Pages & Firebase Setup
-1. Push the contents of this folder to a GitHub repository.
-2. Enable **GitHub Pages** from **Settings → Pages → Deploy from branch (`main` / `root`)**.
-3. Open `js/firebase-config.js` and replace `FIREBASE_CONFIG` with your Firebase project's web credentials.
-4. In Firebase Console, enable **Google Authentication** and **Realtime Database** (add your `*.github.io` domain to Authorized Domains).
+## Key Features
+- **Bakha the Alpha Wolf Butcher (3D Rig & Portrait)**: Custom 3D character model featuring Bakha's silver-charcoal wolf fur, glowing golden-amber eyes, black & white Kurdish Jamadani scarf, weathered brown leather butcher apron with brass rings & sheathed knives, and ember-forged Damascus cleaver.
+- **Toggleable FPP / TPP**: Press `V` or click the camera button to switch between Third-Person (`TPP`) and First-Person (`FPP`) with a furry wolf forearm viewmodel.
+- **Real-Time 3D Combat**: Free-roam with `WASD`, sprint with `Shift`, slash with `Space`, stun with Wolf Howl (`Q`), unleash Blood Rage (`R`), dodge (`C`), and heal (`E`).
+- **8-Chapter Central Kurdish (Sorani) Story & 3-Phase Boss Fight**: Defend Barzan Village alongside the Wise Old Man (`پیرەمێردی زانا`) and Village Blacksmith (`ئاسنگەری گوند`), and defeat the **Father of Darkness** across 3 escalating phases.
+- **Firebase Cloud Saves & Global Leaderboard**: Configured in `js/firebase-config.js` and ready for GitHub Pages deployment.

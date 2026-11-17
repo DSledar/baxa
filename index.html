@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>بەخەی قەساب 3D — یاری ئەکشن و چیرۆک (Bakha 3D Action RPG)</title>
+    <title>بەخەی قەساب 3D — یاری ئەکشن و چیرۆک (Bakha the Butcher 3D)</title>
 
     <!-- Bootstrap 5.3.3 RTL & Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
@@ -20,13 +20,19 @@
         <canvas id="webglCanvas"></canvas>
     </div>
 
-    <!-- Top Hybrid Leather & Glassmorphic HUD -->
+    <!-- Top Hybrid Kurdish Leather & Glassmorphic HUD -->
     <header class="hud-top-bar hybrid-glass-panel d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex flex-wrap align-items-center gap-3">
+            <!-- Character Portrait & Title -->
             <div class="d-flex align-items-center gap-2">
-                <span class="fs-4">🐺</span>
+                <div class="bakha-avatar-ring">
+                    <img src="assets/bakha_portrait.jpg" alt="بەخەی قەساب" class="bakha-avatar-img">
+                </div>
                 <div>
-                    <div class="fw-bold text-warning" style="font-size: 0.98rem;">بەخەی قەساب 3D</div>
+                    <div class="fw-bold text-warning d-flex align-items-center gap-1" style="font-size: 0.98rem;">
+                        <span>بەخەی قەساب 3D</span>
+                        <span class="badge bg-danger bg-opacity-75" style="font-size: 0.65rem;">Alpha Wolf</span>
+                    </div>
                     <div class="text-secondary" style="font-size: 0.72rem;" id="firebaseStatusBadge">پاشەکەوتی ناوخۆیی</div>
                 </div>
             </div>
@@ -40,7 +46,7 @@
             </div>
             <div class="meter-box">
                 <div class="d-flex justify-content-between small text-secondary" style="font-size: 0.72rem;">
-                    <span>تووڕەیی</span><span id="rageText">35%</span>
+                    <span>تووڕەیی گورگ</span><span id="rageText">35%</span>
                 </div>
                 <div class="meter-track"><div class="meter-rage-fill" id="rageBar"></div></div>
             </div>
@@ -51,7 +57,7 @@
                 <div class="meter-track"><div class="meter-stamina-fill" id="staminaBar"></div></div>
             </div>
 
-            <!-- Pills -->
+            <!-- Resource Pills -->
             <span class="copper-pill">💰 <span id="goldText">50</span></span>
             <span class="copper-pill">🍖 <span id="meatText">3</span></span>
             <span class="copper-pill">🛡️ شەرەف: <span id="honorText">50</span></span>
@@ -67,12 +73,12 @@
             <button class="btn btn-sm btn-outline-light" id="btnLeaderboard"><i class="bi bi-trophy-fill text-warning"></i> ڕیزبەندی</button>
             <button class="btn btn-sm btn-outline-success" id="btnCloudSave"><i class="bi bi-cloud-arrow-up"></i> پاشەکەوت</button>
             <button class="btn btn-sm btn-outline-info" id="googleLoginBtn"><i class="bi bi-google"></i> چوونەژوورەوە</button>
-            <button class="btn btn-sm btn-outline-secondary text-white" id="btnAudio"><i class="bi bi-volume-mute-fill"></i></button>
+            <button class="btn btn-sm btn-outline-secondary text-white" id="btnAudio" title="دەنگ و مۆسیقا"><i class="bi bi-volume-mute-fill"></i></button>
         </div>
     </header>
 
     <div class="pointer-lock-banner hybrid-glass-panel text-warning d-none d-lg-block">
-        WASD: ڕۆیشتن | ماوس/دوو کلیک: سووڕاندن | V: گۆڕینی FPP/TPP | Space: لێدان
+        WASD: ڕۆیشتن | Shift: ڕاکردن | ماوس: سووڕاندن | V: گۆڕینی FPP/TPP | Space: لێدانی ساتوور
     </div>
 
     <!-- Boss Health Bar -->
@@ -113,6 +119,7 @@
         </div>
 
         <div class="d-flex align-items-center gap-2">
+            <img src="assets/bakha_portrait.jpg" alt="بەخە" class="story-speaker-avatar" id="storySpeakerAvatar">
             <span class="badge rounded-pill bg-danger bg-opacity-75" id="storySpeaker">گێڕەرەوە</span>
         </div>
 
@@ -125,7 +132,7 @@
     </section>
 
     <!-- Toast Notifications -->
-    <div id="toastContainer" style="position: fixed; top: 82px; left: 16px; z-index: 60; max-width: 320px;"></div>
+    <div id="toastContainer" style="position: fixed; top: 86px; left: 16px; z-index: 60; max-width: 320px;"></div>
 
     <!-- Minigame Modal -->
     <div class="modal fade" id="minigameModal" tabindex="-1">
@@ -152,7 +159,16 @@
                     <h5 class="modal-title text-warning">🎒 کۆگای بەخەی قەساب</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body"><div class="row g-3" id="inventoryGrid"></div></div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center gap-3 mb-3 p-2 rounded border border-warning border-opacity-25 bg-black bg-opacity-40">
+                        <img src="assets/bakha_portrait.jpg" alt="بەخەی قەساب" style="width: 64px; height: 64px; object-fit: cover; border-radius: 12px; border: 2px solid #f59e0b;">
+                        <div>
+                            <div class="fw-bold text-warning">بەخەی قەساب — گورگی بەرزان</div>
+                            <div class="small text-secondary">چەکی سەرەکی: ساتووری پۆڵایینی دەبان + خەنجەری کەمەر</div>
+                        </div>
+                    </div>
+                    <div class="row g-3" id="inventoryGrid"></div>
+                </div>
             </div>
         </div>
     </div>
