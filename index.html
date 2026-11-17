@@ -8,7 +8,448 @@
     <!-- Bootstrap 5.3.3 RTL & Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        :root {
+            --bg-void: #060302;
+            --leather-dark: rgba(20, 10, 6, 0.84);
+            --leather-deep: #120804;
+            --glass-bg: rgba(16, 12, 10, 0.58);
+            --glass-border: rgba(245, 158, 11, 0.35);
+            --copper: #b45309;
+            --copper-glow: #f59e0b;
+            --gold: #fbbf24;
+            --blood: #991b1b;
+            --blood-neon: #ef4444;
+            --cyan-neon: #38bdf8;
+            --emerald-neon: #10b981;
+            --text-main: #fbf7ee;
+            --text-muted: #cbbba6;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-void);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, 'Noto Naskh Arabic', 'Vazirmatn', Arial, sans-serif;
+            direction: rtl;
+        }
+
+        /* Fullscreen 3D Viewport */
+        #game-viewport {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        #webglCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            outline: none;
+            cursor: grab;
+        }
+
+        #webglCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* Kurdish Jamadani Checkered Trim */
+        .jamana-trim {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            z-index: 50;
+            background-image: repeating-linear-gradient(
+                45deg,
+                #0f172a 0px,
+                #0f172a 10px,
+                #f8fafc 10px,
+                #f8fafc 20px
+            );
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Hybrid Kurdish Leather + Dark Glassmorphic Panel */
+        .hybrid-glass-panel {
+            background: linear-gradient(145deg, rgba(28, 15, 9, 0.78) 0%, rgba(10, 6, 4, 0.84) 100%);
+            backdrop-filter: blur(14px) saturate(140%);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 220, 150, 0.12);
+            border-radius: 16px;
+        }
+
+        .copper-pill {
+            background: linear-gradient(180deg, rgba(69, 26, 3, 0.85) 0%, rgba(28, 10, 2, 0.9) 100%);
+            border: 1px solid var(--copper-glow);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        /* Top HUD Bar */
+        .hud-top-bar {
+            position: fixed;
+            top: 12px;
+            left: 14px;
+            right: 14px;
+            z-index: 20;
+            padding: 10px 16px;
+            pointer-events: auto;
+        }
+
+        .meter-box {
+            min-width: 115px;
+        }
+
+        .meter-track {
+            height: 9px;
+            background: rgba(0, 0, 0, 0.65);
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+        }
+
+        .meter-hp-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #dc2626, #f87171);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+            transition: width 0.25s ease;
+        }
+
+        .meter-rage-fill {
+            height: 100%;
+            width: 35%;
+            background: linear-gradient(90deg, #d97706, #fbbf24);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+            transition: width 0.25s ease;
+        }
+
+        .meter-stamina-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+            transition: width 0.15s ease;
+        }
+
+        /* Crosshair */
+        .crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 15;
+            opacity: 0.75;
+            transition: transform 0.1s ease, opacity 0.2s;
+        }
+
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: var(--gold);
+            box-shadow: 0 0 6px var(--copper-glow);
+        }
+
+        .crosshair::before {
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+
+        .crosshair::after {
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+
+        .crosshair.hit {
+            transform: translate(-50%, -50%) scale(1.45);
+            filter: drop-shadow(0 0 8px #ef4444);
+        }
+
+        /* Boss Health Bar Top Center */
+        .boss-hud {
+            position: fixed;
+            top: 86px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(520px, 90vw);
+            z-index: 18;
+            padding: 10px 18px;
+            display: none;
+        }
+
+        .boss-hud.active {
+            display: block;
+            animation: fadeInDown 0.35s ease;
+        }
+
+        /* Story & Dialogue Dock */
+        .story-dock {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            width: min(460px, calc(100vw - 32px));
+            max-height: 46vh;
+            z-index: 20;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .story-dock.minimized {
+            max-height: 54px;
+            overflow: hidden;
+        }
+
+        .dialogue-scroll {
+            max-height: 140px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.75;
+            color: var(--text-main);
+            padding-left: 6px;
+        }
+
+        .dialogue-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .dialogue-scroll::-webkit-scrollbar-thumb {
+            background: var(--copper-glow);
+            border-radius: 10px;
+        }
+
+        .choice-btn-hybrid {
+            background: linear-gradient(90deg, rgba(45, 22, 12, 0.88) 0%, rgba(20, 10, 6, 0.94) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            color: var(--text-main);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .choice-btn-hybrid:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateX(-4px);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Action Controls Dock */
+        .combat-controls-dock {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            z-index: 20;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .action-key-btn {
+            background: rgba(20, 12, 8, 0.85);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .action-key-btn:hover {
+            background: rgba(180, 83, 9, 0.45);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .action-key-btn:active {
+            transform: scale(0.95);
+        }
+
+        .kbd-tag {
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--gold);
+            padding: 1px 6px;
+            border-radius: 5px;
+            font-size: 0.72rem;
+            font-family: monospace;
+        }
+
+        /* Mobile Touch Controls */
+        .mobile-joystick-zone {
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            backdrop-filter: blur(6px);
+            z-index: 22;
+            display: none;
+            touch-action: none;
+        }
+
+        .mobile-joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--gold), var(--copper));
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        @media (max-width: 992px) {
+            .mobile-joystick-zone {
+                display: block;
+            }
+            .story-dock {
+                width: calc(100vw - 24px);
+                right: 12px;
+                bottom: 10px;
+                max-height: 36vh;
+            }
+            .combat-controls-dock {
+                bottom: auto;
+                top: 90px;
+                left: 12px;
+            }
+        }
+
+        /* Blood Rage Vignette */
+        .rage-vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 12;
+            box-shadow: inset 0 0 110px rgba(220, 38, 38, 0);
+            transition: box-shadow 0.4s ease;
+        }
+
+        .rage-vignette.active {
+            box-shadow: inset 0 0 130px rgba(220, 38, 38, 0.65);
+        }
+
+        /* Floating Damage Text */
+        .floating-combat-text {
+            position: fixed;
+            pointer-events: none;
+            z-index: 40;
+            font-weight: 900;
+            font-size: 1.25rem;
+            text-shadow: 0 2px 10px #000, 0 0 15px rgba(0, 0, 0, 0.9);
+            animation: floatDmg 1.05s ease-out forwards;
+        }
+
+        @keyframes floatDmg {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.9); }
+            30% { opacity: 1; transform: translate(-50%, -22px) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -58px) scale(1); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate(-50%, -14px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        .modal-content.hybrid-glass-panel {
+            background: linear-gradient(145deg, rgba(26, 13, 8, 0.95) 0%, rgba(10, 6, 4, 0.97) 100%);
+            color: var(--text-main);
+            border: 1px solid var(--copper-glow);
+        }
+
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        .pointer-lock-banner {
+            position: fixed;
+            top: 76px;
+            right: 16px;
+            z-index: 19;
+            font-size: 0.78rem;
+            padding: 5px 12px;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        .bakha-avatar-ring {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(135deg, #fbbf24, #b45309, #991b1b);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.55);
+            flex-shrink: 0;
+        }
+
+        .bakha-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .story-speaker-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: top center;
+            border: 1.5px solid var(--gold);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+    </style>
 </head>
 <body>
     <div class="jamana-trim"></div>
@@ -23,17 +464,16 @@
     <!-- Top Hybrid Kurdish Leather & Glassmorphic HUD -->
     <header class="hud-top-bar hybrid-glass-panel d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex flex-wrap align-items-center gap-3">
-            <!-- Character Portrait & Title -->
             <div class="d-flex align-items-center gap-2">
                 <div class="bakha-avatar-ring">
-                    <img src="assets/bakha_portrait.jpg" alt="بەخەی قەساب" class="bakha-avatar-img">
+                    <img alt="بەخەی قەساب" class="bakha-avatar-img" id="hudAvatarImg">
                 </div>
                 <div>
                     <div class="fw-bold text-warning d-flex align-items-center gap-1" style="font-size: 0.98rem;">
                         <span>بەخەی قەساب 3D</span>
                         <span class="badge bg-danger bg-opacity-75" style="font-size: 0.65rem;">Alpha Wolf</span>
                     </div>
-                    <div class="text-secondary" style="font-size: 0.72rem;" id="firebaseStatusBadge">پاشەکەوتی ناوخۆیی</div>
+                    <div class="text-secondary" style="font-size: 0.72rem;" id="locationBadge">قەسابخانەی گوندی بەرزان</div>
                 </div>
             </div>
 
@@ -71,9 +511,8 @@
             <button class="btn btn-sm btn-warning fw-bold" id="btnMinigame">🥩 بڕینی گۆشت</button>
             <button class="btn btn-sm btn-outline-light" id="btnInventory"><i class="bi bi-backpack"></i> کۆگا</button>
             <button class="btn btn-sm btn-outline-light" id="btnLeaderboard"><i class="bi bi-trophy-fill text-warning"></i> ڕیزبەندی</button>
-            <button class="btn btn-sm btn-outline-success" id="btnCloudSave"><i class="bi bi-cloud-arrow-up"></i> پاشەکەوت</button>
-            <button class="btn btn-sm btn-outline-info" id="googleLoginBtn"><i class="bi bi-google"></i> چوونەژوورەوە</button>
-            <button class="btn btn-sm btn-outline-secondary text-white" id="btnAudio" title="دەنگ و مۆسیقا"><i class="bi bi-volume-mute-fill"></i></button>
+            <button class="btn btn-sm btn-outline-success" id="btnSave"><i class="bi bi-cloud-arrow-up"></i> پاشەکەوت</button>
+            <button class="btn btn-sm btn-outline-secondary text-white" id="btnAudio" title="دەنگ و مۆسیقای کوردی"><i class="bi bi-volume-mute-fill"></i></button>
         </div>
     </header>
 
@@ -119,7 +558,7 @@
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <img src="assets/bakha_portrait.jpg" alt="بەخە" class="story-speaker-avatar" id="storySpeakerAvatar">
+            <img alt="بەخە" class="story-speaker-avatar" id="storySpeakerAvatar">
             <span class="badge rounded-pill bg-danger bg-opacity-75" id="storySpeaker">گێڕەرەوە</span>
         </div>
 
@@ -161,7 +600,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="d-flex align-items-center gap-3 mb-3 p-2 rounded border border-warning border-opacity-25 bg-black bg-opacity-40">
-                        <img src="assets/bakha_portrait.jpg" alt="بەخەی قەساب" style="width: 64px; height: 64px; object-fit: cover; border-radius: 12px; border: 2px solid #f59e0b;">
+                        <img alt="بەخەی قەساب" id="invAvatarImg" style="width: 64px; height: 64px; object-fit: cover; border-radius: 12px; border: 2px solid #f59e0b;">
                         <div>
                             <div class="fw-bold text-warning">بەخەی قەساب — گورگی بەرزان</div>
                             <div class="small text-secondary">چەکی سەرەکی: ساتووری پۆڵایینی دەبان + خەنجەری کەمەر</div>
@@ -178,7 +617,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content hybrid-glass-panel">
                 <div class="modal-header border-warning border-opacity-25">
-                    <h5 class="modal-title text-warning">🏆 ڕیزبەندی پاڵەوانان (Firebase)</h5>
+                    <h5 class="modal-title text-warning">🏆 ڕیزبەندی پاڵەوانانی بەرزان</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -191,26 +630,2394 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts: Bootstrap 5 & Three.js r128 -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <script src="js/firebase-config.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/shaders.js"></script>
-    <script src="js/world.js"></script>
-    <script src="js/character.js"></script>
-    <script src="js/enemies.js"></script>
-    <script src="js/story.js"></script>
-    <script src="js/game.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        /* =====================================================================
+           0. PROCEDURAL BAKHA WOLF PORTRAIT DATA URI (ZERO EXTERNAL ASSETS)
+           ===================================================================== */
+        function generateBakhaPortraitURI() {
+            const c = document.createElement('canvas');
+            c.width = 160;
+            c.height = 160;
+            const ctx = c.getContext('2d');
+
+            // Dark forge background
+            const bg = ctx.createRadialGradient(80, 70, 12, 80, 80, 90);
+            bg.addColorStop(0, '#451a03');
+            bg.addColorStop(1, '#090504');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, 160, 160);
+
+            // Checkered Jamadani scarf collar
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.ellipse(80, 138, 56, 26, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            for (let y = 116; y < 158; y += 10) {
+                for (let x = 26; x < 134; x += 10) {
+                    if ((x + y) % 20 === 0) ctx.fillRect(x, y, 7, 7);
+                }
+            }
+
+            // Wolf ears
+            ctx.fillStyle = '#27272a';
+            ctx.beginPath();
+            ctx.moveTo(42, 65); ctx.lineTo(34, 18); ctx.lineTo(64, 44);
+            ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(118, 65); ctx.lineTo(126, 18); ctx.lineTo(96, 44);
+            ctx.closePath(); ctx.fill();
+
+            // Wolf head silhouette
+            ctx.fillStyle = '#3f3f46';
+            ctx.beginPath();
+            ctx.ellipse(80, 78, 42, 46, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Silver cheek fur tufts
+            ctx.fillStyle = '#d4d4d8';
+            ctx.beginPath();
+            ctx.moveTo(38, 82); ctx.lineTo(24, 96); ctx.lineTo(48, 106);
+            ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(122, 82); ctx.lineTo(136, 96); ctx.lineTo(112, 106);
+            ctx.closePath(); ctx.fill();
+
+            // Snout & nose
+            ctx.fillStyle = '#a1a1aa';
+            ctx.beginPath();
+            ctx.ellipse(80, 94, 18, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#09090b';
+            ctx.beginPath();
+            ctx.ellipse(80, 86, 9, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glowing golden-amber wolf eyes
+            ctx.fillStyle = '#fbbf24';
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 10;
+            ctx.beginPath(); ctx.ellipse(63, 68, 7, 4, -0.15, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(97, 68, 7, 4, 0.15, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            return c.toDataURL('image/png');
+        }
+
+        const portraitURI = generateBakhaPortraitURI();
+        ['hudAvatarImg', 'storySpeakerAvatar', 'invAvatarImg'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.src = portraitURI;
+        });
+
+        /* =====================================================================
+           1. CUSTOM GLSL SHADERS (NIGHT SKY DOME & EMBER DAMASCUS BLADE)
+           ===================================================================== */
+        const BakhaShaders = {
+            createSkyDome: function () {
+                const skyGeo = new THREE.SphereGeometry(95, 32, 24);
+                const skyMat = new THREE.ShaderMaterial({
+                    side: THREE.BackSide,
+                    depthWrite: false,
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uTopColor: { value: new THREE.Color(0x040712) },
+                        uHorizonColor: { value: new THREE.Color(0x28110b) },
+                        uMoonDir: { value: new THREE.Vector3(0.4, 0.55, -0.7).normalize() }
+                    },
+                    vertexShader: `
+                        varying vec3 vWorldPos;
+                        void main() {
+                            vec4 wp = modelMatrix * vec4(position, 1.0);
+                            vWorldPos = wp.xyz;
+                            gl_Position = projectionMatrix * viewMatrix * wp;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float uTime;
+                        uniform vec3 uTopColor;
+                        uniform vec3 uHorizonColor;
+                        uniform vec3 uMoonDir;
+                        varying vec3 vWorldPos;
+
+                        float hash(vec2 p) {
+                            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+                        }
+
+                        void main() {
+                            vec3 dir = normalize(vWorldPos);
+                            float h = clamp(dir.y, 0.0, 1.0);
+                            vec3 col = mix(uHorizonColor, uTopColor, pow(h, 0.55));
+
+                            float moonDot = max(dot(dir, uMoonDir), 0.0);
+                            col += vec3(0.85, 0.72, 0.55) * pow(moonDot, 180.0) * 1.4;
+                            col += vec3(0.35, 0.22, 0.15) * pow(moonDot, 12.0) * 0.45;
+
+                            vec2 starUV = floor(dir.xz / (dir.y + 0.15) * 42.0);
+                            float s = hash(starUV);
+                            if (s > 0.992 && dir.y > 0.08) {
+                                float twinkle = 0.5 + 0.5 * sin(uTime * 3.0 + s * 100.0);
+                                col += vec3(1.0, 0.95, 0.85) * twinkle * smoothstep(0.08, 0.4, dir.y);
+                            }
+
+                            gl_FragColor = vec4(col, 1.0);
+                        }
+                    `
+                });
+                return new THREE.Mesh(skyGeo, skyMat);
+            },
+
+            createEmberBladeMaterial: function (baseTexture) {
+                return new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uRage: { value: 0 },
+                        uMap: { value: baseTexture }
+                    },
+                    vertexShader: `
+                        varying vec2 vUv;
+                        varying vec3 vNormal;
+                        void main() {
+                            vUv = uv;
+                            vNormal = normalize(normalMatrix * normal);
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float uTime;
+                        uniform float uRage;
+                        uniform sampler2D uMap;
+                        varying vec2 vUv;
+                        varying vec3 vNormal;
+
+                        void main() {
+                            vec3 tex = texture2D(uMap, vUv).rgb;
+                            float rim = pow(1.0 - abs(vNormal.z), 2.5);
+                            float pulse = 0.6 + 0.4 * sin(uTime * 5.0 + vUv.y * 8.0);
+                            vec3 ember = mix(vec3(0.95, 0.55, 0.08), vec3(1.0, 0.15, 0.15), uRage);
+                            vec3 finalCol = tex * 0.85 + ember * rim * (0.45 + uRage * 1.1) * pulse;
+                            gl_FragColor = vec4(finalCol, 1.0);
+                        }
+                    `
+                });
+            }
+        };
+
+        /* =====================================================================
+           2. WEB AUDIO API KURDISH DAF, OUD MAQAM HIJAZ & WOLF SFX ENGINE
+           ===================================================================== */
+        class BakhaAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = false;
+                this.musicVol = 0.65;
+                this.sfxVol = 0.9;
+                this.droneOsc = null;
+                this.windNode = null;
+                this.musicInterval = null;
+                this.stepIdx = 0;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioClass = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioClass();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggle() {
+                this.enabled = !this.enabled;
+                if (this.enabled) {
+                    this.init();
+                    this.startAmbience();
+                    this.playSfx('howl');
+                } else {
+                    this.stopAmbience();
+                }
+                return this.enabled;
+            }
+
+            startAmbience() {
+                if (!this.enabled || !this.ctx || this.droneOsc) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    this.droneOsc = this.ctx.createOscillator();
+                    const droneGain = this.ctx.createGain();
+                    this.droneOsc.type = 'sawtooth';
+                    this.droneOsc.frequency.setValueAtTime(73.42, now);
+
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(190, now);
+
+                    droneGain.gain.setValueAtTime(0.03 * this.musicVol, now);
+                    this.droneOsc.connect(filter);
+                    filter.connect(droneGain);
+                    droneGain.connect(this.ctx.destination);
+                    this.droneOsc.start();
+
+                    const bufferSize = this.ctx.sampleRate * 2;
+                    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+                    this.windNode = this.ctx.createBufferSource();
+                    this.windNode.buffer = noiseBuffer;
+                    this.windNode.loop = true;
+
+                    const windFilter = this.ctx.createBiquadFilter();
+                    windFilter.type = 'bandpass';
+                    windFilter.frequency.setValueAtTime(320, now);
+                    windFilter.Q.setValueAtTime(1.6, now);
+
+                    const windGain = this.ctx.createGain();
+                    windGain.gain.setValueAtTime(0.022 * this.musicVol, now);
+
+                    this.windNode.connect(windFilter);
+                    windFilter.connect(windGain);
+                    windGain.connect(this.ctx.destination);
+                    this.windNode.start();
+
+                    const maqamNotes = [146.83, 155.56, 185.00, 196.00, 220.00, 233.08, 293.66, 220.00];
+                    this.musicInterval = setInterval(() => {
+                        if (!this.enabled || !this.ctx) return;
+                        const t = this.ctx.currentTime;
+
+                        if ([0, 2, 3, 5, 6].includes(this.stepIdx % 8)) {
+                            const dafOsc = this.ctx.createOscillator();
+                            const dafGain = this.ctx.createGain();
+                            dafOsc.type = 'sine';
+                            const isBass = (this.stepIdx % 4 === 0);
+                            dafOsc.frequency.setValueAtTime(isBass ? 115 : 210, t);
+                            dafOsc.frequency.exponentialRampToValueAtTime(isBass ? 42 : 95, t + 0.16);
+                            dafGain.gain.setValueAtTime((isBass ? 0.14 : 0.07) * this.musicVol, t);
+                            dafGain.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+                            dafOsc.connect(dafGain);
+                            dafGain.connect(this.ctx.destination);
+                            dafOsc.start(t);
+                            dafOsc.stop(t + 0.18);
+                        }
+
+                        if (this.stepIdx % 2 === 0) {
+                            const freq = maqamNotes[Math.floor(Math.random() * maqamNotes.length)];
+                            const oudOsc = this.ctx.createOscillator();
+                            const oudFilter = this.ctx.createBiquadFilter();
+                            const oudGain = this.ctx.createGain();
+
+                            oudOsc.type = 'triangle';
+                            oudOsc.frequency.setValueAtTime(freq, t);
+                            oudFilter.type = 'lowpass';
+                            oudFilter.frequency.setValueAtTime(950, t);
+                            oudFilter.frequency.exponentialRampToValueAtTime(240, t + 0.55);
+
+                            oudGain.gain.setValueAtTime(0.065 * this.musicVol, t);
+                            oudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.58);
+
+                            oudOsc.connect(oudFilter);
+                            oudFilter.connect(oudGain);
+                            oudGain.connect(this.ctx.destination);
+                            oudOsc.start(t);
+                            oudOsc.stop(t + 0.6);
+                        }
+
+                        this.stepIdx++;
+                    }, 340);
+                } catch (e) {}
+            }
+
+            stopAmbience() {
+                try {
+                    if (this.droneOsc) { this.droneOsc.stop(); this.droneOsc = null; }
+                    if (this.windNode) { this.windNode.stop(); this.windNode = null; }
+                    if (this.musicInterval) { clearInterval(this.musicInterval); this.musicInterval = null; }
+                } catch (e) {}
+            }
+
+            playSfx(type) {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+
+                    if (type === 'click') {
+                        osc.frequency.setValueAtTime(520, now);
+                        osc.frequency.exponentialRampToValueAtTime(180, now + 0.05);
+                        g.gain.setValueAtTime(0.15 * this.sfxVol, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        osc.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.06);
+                    } else if (type === 'slash') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(840, now);
+                        osc.frequency.exponentialRampToValueAtTime(75, now + 0.22);
+                        g.gain.setValueAtTime(0.32 * this.sfxVol, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                        osc.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.23);
+                    } else if (type === 'hit') {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(195, now);
+                        osc.frequency.exponentialRampToValueAtTime(36, now + 0.2);
+                        g.gain.setValueAtTime(0.45 * this.sfxVol, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                        osc.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.21);
+                    } else if (type === 'sharpen') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(1450, now);
+                        osc.frequency.linearRampToValueAtTime(3250, now + 0.24);
+                        g.gain.setValueAtTime(0.16 * this.sfxVol, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                        osc.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.26);
+                    } else if (type === 'howl') {
+                        osc.type = 'sawtooth';
+                        const f = this.ctx.createBiquadFilter();
+                        f.type = 'lowpass';
+                        f.frequency.setValueAtTime(620, now);
+                        osc.frequency.setValueAtTime(155, now);
+                        osc.frequency.linearRampToValueAtTime(340, now + 0.38);
+                        osc.frequency.exponentialRampToValueAtTime(98, now + 1.05);
+                        g.gain.setValueAtTime(0.01, now);
+                        g.gain.linearRampToValueAtTime(0.34 * this.sfxVol, now + 0.24);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 1.05);
+                        osc.connect(f); f.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 1.06);
+                    } else if (type === 'boss_roar') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(110, now);
+                        osc.frequency.linearRampToValueAtTime(48, now + 0.85);
+                        g.gain.setValueAtTime(0.4 * this.sfxVol, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+                        osc.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.86);
+                    } else if (type === 'coin') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(980, now);
+                        osc.frequency.setValueAtTime(1320, now + 0.08);
+                        g.gain.setValueAtTime(0.2 * this.sfxVol, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                        osc.connect(g); g.connect(this.ctx.destination);
+                        osc.start(now); osc.stop(now + 0.26);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        const bakhaAudio = new BakhaAudioEngine();
+
+        /* =====================================================================
+           3. BARZAN 3D WORLD & STORY NPCs
+           ===================================================================== */
+        class BarzanWorld {
+            constructor(scene) {
+                this.scene = scene;
+                this.obstacles = [];
+                this.flickerLights = [];
+                this.hangingMeats = [];
+                this.npcs = [];
+                this.ambientParticles = null;
+                this.build();
+            }
+
+            createStoneTexture() {
+                const c = document.createElement('canvas');
+                c.width = 256; c.height = 256;
+                const cx = c.getContext('2d');
+                cx.fillStyle = '#1b1815';
+                cx.fillRect(0, 0, 256, 256);
+                for (let y = 0; y < 256; y += 32) {
+                    for (let x = 0; x < 256; x += 32) {
+                        cx.fillStyle = (x + y) % 64 === 0 ? '#272320' : '#1e1b18';
+                        cx.fillRect(x + 2, y + 2, 28, 28);
+                    }
+                }
+                const tex = new THREE.CanvasTexture(c);
+                tex.wrapS = THREE.RepeatWrapping;
+                tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(28, 28);
+                return tex;
+            }
+
+            build() {
+                this.skyDome = BakhaShaders.createSkyDome();
+                this.scene.add(this.skyDome);
+
+                const groundGeo = new THREE.PlaneGeometry(160, 180, 32, 32);
+                const groundMat = new THREE.MeshStandardMaterial({
+                    map: this.createStoneTexture(),
+                    roughness: 0.9,
+                    metalness: 0.08
+                });
+                const ground = new THREE.Mesh(groundGeo, groundMat);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.set(0, 0, -35);
+                ground.receiveShadow = true;
+                this.scene.add(ground);
+
+                const roadGeo = new THREE.PlaneGeometry(5.5, 95);
+                const roadMat = new THREE.MeshStandardMaterial({ color: 0x2c2520, roughness: 0.85 });
+                const road = new THREE.Mesh(roadGeo, roadMat);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(0, 0.015, -36);
+                road.receiveShadow = true;
+                this.scene.add(road);
+
+                this.buildButcherShop();
+                this.buildVillage();
+                this.buildForest();
+                this.buildTemple();
+                this.buildFrostCave();
+                this.buildAmbientParticles();
+                this.buildNPCs();
+            }
+
+            buildNPCs() {
+                // Wise Old Man (پیرەمێردی زانا) near Village Square
+                const wiseMan = this.createHumanoidNPC(0xd1d5db, 0x1e3a8a, true);
+                wiseMan.position.set(-2.6, 0, -10.5);
+                wiseMan.rotation.y = 0.4;
+                this.scene.add(wiseMan);
+                this.npcs.push(wiseMan);
+                this.obstacles.push({ x: -2.6, z: -10.5, r: 0.55 });
+
+                // Village Blacksmith (ئاسنگەری گوند) near Butcher Shop
+                const blacksmith = this.createHumanoidNPC(0x3f2e21, 0x7c2d12, false);
+                blacksmith.position.set(3.2, 0, -4.5);
+                blacksmith.rotation.y = -0.5;
+                this.scene.add(blacksmith);
+                this.npcs.push(blacksmith);
+                this.obstacles.push({ x: 3.2, z: -4.5, r: 0.55 });
+            }
+
+            createHumanoidNPC(hairColor, robeColor, hasStaff) {
+                const g = new THREE.Group();
+                const skinMat = new THREE.MeshStandardMaterial({ color: 0xd6a584, roughness: 0.75 });
+                const robeMat = new THREE.MeshStandardMaterial({ color: robeColor, roughness: 0.85 });
+                const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.9 });
+
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.3, 10), robeMat);
+                body.position.y = 0.65;
+                body.castShadow = true;
+                g.add(body);
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skinMat);
+                head.position.y = 1.5;
+                head.castShadow = true;
+                g.add(head);
+
+                const beard = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.32, 8), hairMat);
+                beard.position.set(0, 1.32, 0.14);
+                beard.rotation.x = Math.PI;
+                g.add(beard);
+
+                if (hasStaff) {
+                    const staff = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.03, 0.035, 1.85, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x451a03 })
+                    );
+                    staff.position.set(0.38, 0.92, 0.15);
+                    g.add(staff);
+
+                    const orb = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.08, 8, 8),
+                        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+                    );
+                    orb.position.set(0.38, 1.88, 0.15);
+                    g.add(orb);
+                } else {
+                    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.65, 6), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+                    handle.position.set(-0.36, 0.95, 0.2);
+                    handle.rotation.x = 0.8;
+                    g.add(handle);
+                    const hammerHead = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.26), new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.8 }));
+                    hammerHead.position.set(-0.36, 1.15, 0.42);
+                    g.add(hammerHead);
+                }
+                return g;
+            }
+
+            addLantern(x, y, z, color = 0xf59e0b, intensity = 2.0) {
+                const g = new THREE.Group();
+                g.position.set(x, y, z);
+                const post = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.06, 0.08, y, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x2b180e, roughness: 0.8 })
+                );
+                post.position.y = -y / 2;
+                post.castShadow = true;
+                g.add(post);
+
+                const bulb = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.14, 10, 10),
+                    new THREE.MeshBasicMaterial({ color })
+                );
+                g.add(bulb);
+
+                const light = new THREE.PointLight(color, intensity, 16);
+                g.add(light);
+
+                this.scene.add(g);
+                this.flickerLights.push({ light, base: intensity, phase: Math.random() * 10 });
+                this.obstacles.push({ x, z, r: 0.35 });
+            }
+
+            buildButcherShop() {
+                const block = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.65, 0.72, 0.85, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x452412, roughness: 0.9 })
+                );
+                block.position.set(2.4, 0.425, 1.5);
+                block.castShadow = true;
+                block.receiveShadow = true;
+                this.scene.add(block);
+                this.obstacles.push({ x: 2.4, z: 1.5, r: 0.8 });
+
+                const beamMat = new THREE.MeshStandardMaterial({ color: 0x2a1409, roughness: 0.9 });
+                const positions = [[-3.8, -1.5], [3.8, -1.5], [-3.8, 4.5], [3.8, 4.5]];
+                positions.forEach(([x, z]) => {
+                    const p = new THREE.Mesh(new THREE.BoxGeometry(0.32, 3.6, 0.32), beamMat);
+                    p.position.set(x, 1.8, z);
+                    p.castShadow = true;
+                    this.scene.add(p);
+                    this.obstacles.push({ x, z, r: 0.4 });
+                });
+
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.25, 6.8), beamMat);
+                roof.position.set(0, 3.65, 1.5);
+                roof.castShadow = true;
+                this.scene.add(roof);
+
+                const meatMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.6 });
+                [-2.2, 2.2].forEach((x) => {
+                    const mg = new THREE.Group();
+                    mg.position.set(x, 3.4, 2.5);
+                    const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6), new THREE.MeshStandardMaterial({ color: 0x6b7280, metalness: 0.9 }));
+                    hook.position.y = -0.35;
+                    mg.add(hook);
+
+                    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.35, 1.2, 10), meatMat);
+                    body.position.y = -1.1;
+                    body.castShadow = true;
+                    mg.add(body);
+                    this.scene.add(mg);
+                    this.hangingMeats.push(mg);
+                });
+
+                this.addLantern(-3.2, 2.6, -1.2, 0xf59e0b, 2.5);
+                this.addLantern(3.2, 2.6, -1.2, 0xf59e0b, 2.5);
+            }
+
+            buildVillage() {
+                const wallMat = new THREE.MeshStandardMaterial({ color: 0x3b322b, roughness: 0.92 });
+                const winMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+                const houses = [
+                    [-9, -10, 5, 4, 5],
+                    [9, -11, 5, 4.2, 5.5],
+                    [-10, -20, 5.5, 3.8, 5],
+                    [10, -21, 5, 4, 5]
+                ];
+                houses.forEach(([x, z, w, h, d]) => {
+                    const house = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+                    house.position.set(x, h / 2, z);
+                    house.castShadow = true;
+                    house.receiveShadow = true;
+                    this.scene.add(house);
+
+                    const win = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1), winMat);
+                    win.position.set(x > 0 ? x - w / 2 - 0.02 : x + w / 2 + 0.02, 2.0, z);
+                    win.rotation.y = x > 0 ? -Math.PI / 2 : Math.PI / 2;
+                    this.scene.add(win);
+
+                    this.obstacles.push({ x, z, r: Math.max(w, d) * 0.55 });
+                });
+
+                this.addLantern(-4.2, 2.8, -14, 0xf97316, 2.2);
+                this.addLantern(4.2, 2.8, -14, 0xf97316, 2.2);
+            }
+
+            buildForest() {
+                const trunkMat = new THREE.MeshStandardMaterial({ color: 0x2b170c, roughness: 0.95 });
+                const leafMat = new THREE.MeshStandardMaterial({ color: 0x0f291e, roughness: 0.85 });
+
+                for (let i = 0; i < 36; i++) {
+                    const side = i % 2 === 0 ? -1 : 1;
+                    const x = side * (4.8 + Math.random() * 18);
+                    const z = -22 - Math.random() * 28;
+                    const scale = 0.85 + Math.random() * 0.9;
+
+                    const tree = new THREE.Group();
+                    tree.position.set(x, 0, z);
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * scale, 0.34 * scale, 2.6 * scale, 7), trunkMat);
+                    trunk.position.y = 1.3 * scale;
+                    trunk.castShadow = true;
+                    tree.add(trunk);
+
+                    const cone1 = new THREE.Mesh(new THREE.ConeGeometry(1.6 * scale, 3.2 * scale, 7), leafMat);
+                    cone1.position.y = 3.2 * scale;
+                    cone1.castShadow = true;
+                    tree.add(cone1);
+
+                    const cone2 = new THREE.Mesh(new THREE.ConeGeometry(1.2 * scale, 2.6 * scale, 7), leafMat);
+                    cone2.position.y = 4.7 * scale;
+                    cone2.castShadow = true;
+                    tree.add(cone2);
+
+                    this.scene.add(tree);
+                    this.obstacles.push({ x, z, r: 0.55 * scale });
+                }
+
+                this.addLantern(-3.5, 2.5, -30, 0x38bdf8, 1.8);
+                this.addLantern(3.5, 2.5, -38, 0x38bdf8, 1.8);
+            }
+
+            buildTemple() {
+                const stoneMat = new THREE.MeshStandardMaterial({ color: 0x44403c, roughness: 0.8 });
+                const runeMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+                const pillarCoords = [[-5, -46], [5, -46], [-5, -54], [5, -54]];
+
+                pillarCoords.forEach(([x, z]) => {
+                    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.72, 6.2, 8), stoneMat);
+                    p.position.set(x, 3.1, z);
+                    p.castShadow = true;
+                    this.scene.add(p);
+
+                    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.06, 8, 16), runeMat);
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.set(x, 2.5, z);
+                    this.scene.add(ring);
+
+                    this.obstacles.push({ x, z, r: 0.85 });
+                });
+
+                const altar = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.1, 1.4), stoneMat);
+                altar.position.set(-2.5, 0.55, -50);
+                altar.castShadow = true;
+                this.scene.add(altar);
+                this.obstacles.push({ x: -2.5, z: -50, r: 1.2 });
+
+                this.addLantern(-2.5, 2.1, -50, 0x38bdf8, 2.4);
+            }
+
+            buildFrostCave() {
+                const iceStoneMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.2 });
+                const crimsonRuneMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.75 });
+
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 11) * Math.PI;
+                    const x = Math.cos(angle) * 9;
+                    const y = Math.sin(angle) * 7.5;
+                    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 0), iceStoneMat);
+                    rock.position.set(x, y, -62);
+                    rock.rotation.set(Math.random(), Math.random(), 0);
+                    rock.castShadow = true;
+                    this.scene.add(rock);
+                }
+
+                const arenaRing = new THREE.Mesh(new THREE.RingGeometry(8.5, 9.2, 48), crimsonRuneMat);
+                arenaRing.rotation.x = -Math.PI / 2;
+                arenaRing.position.set(0, 0.03, -72);
+                this.scene.add(arenaRing);
+
+                this.addLantern(-6, 3.0, -68, 0xef4444, 3.0);
+                this.addLantern(6, 3.0, -68, 0xef4444, 3.0);
+            }
+
+            buildAmbientParticles() {
+                const count = 320;
+                const geo = new THREE.BufferGeometry();
+                const pos = new Float32Array(count * 3);
+                for (let i = 0; i < count; i++) {
+                    pos[i * 3 + 0] = (Math.random() - 0.5) * 65;
+                    pos[i * 3 + 1] = Math.random() * 14;
+                    pos[i * 3 + 2] = 10 - Math.random() * 95;
+                }
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                const mat = new THREE.PointsMaterial({
+                    color: 0xfde68a,
+                    size: 0.11,
+                    transparent: true,
+                    opacity: 0.55,
+                    blending: THREE.AdditiveBlending
+                });
+                this.ambientParticles = new THREE.Points(geo, mat);
+                this.scene.add(this.ambientParticles);
+            }
+
+            update(dt, elapsed) {
+                if (this.skyDome && this.skyDome.material.uniforms) {
+                    this.skyDome.material.uniforms.uTime.value = elapsed;
+                }
+                this.flickerLights.forEach(item => {
+                    item.light.intensity = item.base + Math.sin(elapsed * 9 + item.phase) * 0.28;
+                });
+                this.hangingMeats.forEach((m, idx) => {
+                    m.rotation.z = Math.sin(elapsed * 1.4 + idx) * 0.05;
+                });
+                this.npcs.forEach((npc, idx) => {
+                    npc.position.y = Math.abs(Math.sin(elapsed * 2 + idx)) * 0.03;
+                });
+                if (this.ambientParticles) {
+                    const arr = this.ambientParticles.geometry.attributes.position.array;
+                    for (let i = 0; i < arr.length; i += 3) {
+                        arr[i + 1] -= dt * 0.6;
+                        arr[i] += Math.sin(elapsed + i) * dt * 0.15;
+                        if (arr[i + 1] < 0.1) arr[i + 1] = 14;
+                    }
+                    this.ambientParticles.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+        }
+
+        /* =====================================================================
+           4. BAKHA THE ALPHA WOLF BUTCHER 3D CHARACTER RIG (FIXED ANIMATIONS)
+           ===================================================================== */
+        class BakhaController {
+            constructor(scene, camera, domElement) {
+                this.scene = scene;
+                this.camera = camera;
+                this.domElement = domElement;
+
+                this.mode = 'TPP';
+                this.yaw = Math.PI; // Facing -Z north into Barzan Village
+                this.pitch = -0.18;
+                this.moveSpeed = 6.4;
+                this.sprintMult = 1.62;
+
+                this.keys = {};
+                this.joystick = { x: 0, y: 0 };
+                this.isDraggingLook = false;
+                this.lastMouse = { x: 0, y: 0 };
+
+                this.isSwinging = false;
+                this.swingTimer = 0;
+                this.swingDuration = 0.34;
+                this.isBlocking = false;
+                this.dodgeTimer = 0;
+
+                this.group = new THREE.Group();
+                this.group.position.set(0, 0, 3.5);
+                this.scene.add(this.group);
+
+                this.buildCharacterMesh();
+                this.buildFppWeapon();
+                this.bindInputs();
+            }
+
+            createWolfFurTex() {
+                const c = document.createElement('canvas');
+                c.width = 256; c.height = 256;
+                const cx = c.getContext('2d');
+                cx.fillStyle = '#3f3f46';
+                cx.fillRect(0, 0, 256, 256);
+
+                for (let i = 0; i < 1800; i++) {
+                    const x = Math.random() * 256;
+                    const y = Math.random() * 256;
+                    const len = 8 + Math.random() * 14;
+                    const tone = Math.random();
+                    cx.strokeStyle = tone > 0.65 ? '#a1a1aa' : (tone > 0.3 ? '#52525b' : '#18181b');
+                    cx.lineWidth = 1.2 + Math.random() * 1.4;
+                    cx.beginPath();
+                    cx.moveTo(x, y);
+                    cx.lineTo(x + (Math.random() - 0.5) * 4, y + len);
+                    cx.stroke();
+                }
+                const tex = new THREE.CanvasTexture(c);
+                tex.wrapS = THREE.RepeatWrapping;
+                tex.wrapT = THREE.RepeatWrapping;
+                return tex;
+            }
+
+            createJamadaniTex() {
+                const c = document.createElement('canvas');
+                c.width = 128; c.height = 128;
+                const cx = c.getContext('2d');
+                cx.fillStyle = '#f8fafc';
+                cx.fillRect(0, 0, 128, 128);
+                cx.fillStyle = '#0f172a';
+                for (let y = 0; y < 128; y += 12) {
+                    for (let x = 0; x < 128; x += 12) {
+                        if ((x + y) % 24 === 0) {
+                            cx.fillRect(x, y, 10, 10);
+                        } else {
+                            cx.fillRect(x + 3, y + 3, 4, 4);
+                        }
+                    }
+                }
+                const tex = new THREE.CanvasTexture(c);
+                tex.wrapS = THREE.RepeatWrapping;
+                tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(4, 4);
+                return tex;
+            }
+
+            createLeatherApronTex() {
+                const c = document.createElement('canvas');
+                c.width = 256; c.height = 256;
+                const cx = c.getContext('2d');
+                const grad = cx.createLinearGradient(0, 0, 256, 256);
+                grad.addColorStop(0, '#3e1c0e');
+                grad.addColorStop(0.5, '#2b1208');
+                grad.addColorStop(1, '#4a2110');
+                cx.fillStyle = grad;
+                cx.fillRect(0, 0, 256, 256);
+
+                for (let i = 0; i < 120; i++) {
+                    cx.strokeStyle = 'rgba(217, 119, 6, 0.14)';
+                    cx.lineWidth = 1;
+                    const x = Math.random() * 256;
+                    const y = Math.random() * 256;
+                    cx.beginPath();
+                    cx.moveTo(x, y);
+                    cx.lineTo(x + (Math.random() - 0.5) * 35, y + (Math.random() - 0.5) * 35);
+                    cx.stroke();
+                }
+                for (let i = 0; i < 18; i++) {
+                    cx.fillStyle = 'rgba(127, 29, 29, 0.38)';
+                    cx.beginPath();
+                    cx.arc(Math.random() * 256, 120 + Math.random() * 130, 6 + Math.random() * 16, 0, Math.PI * 2);
+                    cx.fill();
+                }
+                return new THREE.CanvasTexture(c);
+            }
+
+            createDamascusTex() {
+                const c = document.createElement('canvas');
+                c.width = 128; c.height = 128;
+                const cx = c.getContext('2d');
+                cx.fillStyle = '#9ca3af';
+                cx.fillRect(0, 0, 128, 128);
+                cx.strokeStyle = '#374151';
+                cx.lineWidth = 2;
+                for (let y = 0; y < 128; y += 6) {
+                    cx.beginPath();
+                    for (let x = 0; x < 128; x += 12) {
+                        cx.lineTo(x, y + Math.sin(x * 0.1 + y * 0.08) * 4);
+                    }
+                    cx.stroke();
+                }
+                cx.fillStyle = 'rgba(153, 27, 27, 0.72)';
+                cx.fillRect(0, 95, 128, 33);
+                return new THREE.CanvasTexture(c);
+            }
+
+            buildCharacterMesh() {
+                const furTex = this.createWolfFurTex();
+                const furMat = new THREE.MeshStandardMaterial({ map: furTex, color: 0xd4d4d8, roughness: 0.88 });
+                const darkFurMat = new THREE.MeshStandardMaterial({ map: furTex, color: 0x52525b, roughness: 0.85 });
+                const silverCheekMat = new THREE.MeshStandardMaterial({ color: 0xe4e4e7, roughness: 0.8 });
+                const noseMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.35, metalness: 0.2 });
+                const eyeMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 2.2 });
+                const shirtMat = new THREE.MeshStandardMaterial({ color: 0x121215, roughness: 0.85 });
+                const apronMat = new THREE.MeshStandardMaterial({ map: this.createLeatherApronTex(), roughness: 0.65, metalness: 0.08 });
+                const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+                const jamadaniMat = new THREE.MeshStandardMaterial({ map: this.createJamadaniTex(), roughness: 0.82 });
+                const pantsMat = new THREE.MeshStandardMaterial({ color: 0x262629, roughness: 0.92 });
+                const bootMat = new THREE.MeshStandardMaterial({ color: 0x14110f, roughness: 0.55, metalness: 0.15 });
+
+                this.bladeMat = BakhaShaders.createEmberBladeMaterial(this.createDamascusTex());
+
+                this.pelvis = new THREE.Group();
+                this.pelvis.position.set(0, 0.98, 0);
+                this.group.add(this.pelvis);
+
+                const buildLeg = (sideX) => {
+                    const legGroup = new THREE.Group();
+                    legGroup.position.set(sideX, 0, 0);
+
+                    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.48, 12), pantsMat);
+                    thigh.position.y = -0.24;
+                    thigh.castShadow = true;
+                    legGroup.add(thigh);
+
+                    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.32, 12), pantsMat);
+                    shin.position.y = -0.6;
+                    shin.castShadow = true;
+                    legGroup.add(shin);
+
+                    const bootShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.12, 0.28, 12), bootMat);
+                    bootShaft.position.y = -0.82;
+                    bootShaft.castShadow = true;
+                    legGroup.add(bootShaft);
+
+                    const bootFoot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.36), bootMat);
+                    bootFoot.position.set(0, -0.92, 0.06);
+                    bootFoot.castShadow = true;
+                    legGroup.add(bootFoot);
+
+                    return legGroup;
+                };
+
+                this.leftLeg = buildLeg(-0.22);
+                this.rightLeg = buildLeg(0.22);
+                this.pelvis.add(this.leftLeg, this.rightLeg);
+
+                // Bushy Wolf Tail
+                this.tailGroup = new THREE.Group();
+                this.tailGroup.position.set(0, -0.06, -0.24);
+                const tailBase = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.55, 10), darkFurMat);
+                tailBase.position.set(0, -0.15, -0.2);
+                tailBase.rotation.x = -0.95;
+                this.tailGroup.add(tailBase);
+
+                const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.45, 10), silverCheekMat);
+                tailTip.position.set(0, -0.36, -0.44);
+                tailTip.rotation.x = -1.15;
+                this.tailGroup.add(tailTip);
+                this.pelvis.add(this.tailGroup);
+
+                // Broad Muscular Torso
+                this.torso = new THREE.Group();
+                this.torso.position.set(0, 0.08, 0);
+                this.pelvis.add(this.torso);
+
+                const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.34, 0.74, 14), shirtMat);
+                chest.scale.set(1.05, 1.0, 0.68);
+                chest.position.y = 0.38;
+                chest.castShadow = true;
+                this.torso.add(chest);
+
+                const chestFur = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 8), furMat);
+                chestFur.position.set(0, 0.58, 0.21);
+                chestFur.rotation.x = Math.PI;
+                this.torso.add(chestFur);
+
+                const apronBody = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.96, 0.06), apronMat);
+                apronBody.position.set(0, 0.14, 0.245);
+                apronBody.castShadow = true;
+                this.torso.add(apronBody);
+
+                const bib = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.34, 0.07), apronMat);
+                bib.position.set(0, 0.52, 0.25);
+                this.torso.add(bib);
+
+                [-0.17, 0.17].forEach(rx => {
+                    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.009, 8, 16), brassMat);
+                    ring.position.set(rx, 0.65, 0.29);
+                    this.torso.add(ring);
+
+                    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.24, 0.04), apronMat);
+                    strap.position.set(rx, 0.74, 0.22);
+                    strap.rotation.x = -0.35;
+                    this.torso.add(strap);
+                });
+
+                const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.365, 0.365, 0.09, 16), bootMat);
+                belt.scale.set(1.04, 1.0, 0.74);
+                belt.position.set(0, 0.05, 0.02);
+                this.torso.add(belt);
+
+                const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.1, 0.04), brassMat);
+                buckle.position.set(0, 0.05, 0.29);
+                this.torso.add(buckle);
+
+                const sheath = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.34, 0.05), apronMat);
+                sheath.position.set(-0.18, -0.08, 0.29);
+                sheath.rotation.z = 0.08;
+                this.torso.add(sheath);
+
+                const steelRod = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.014, 0.01, 0.42, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.9, roughness: 0.2 })
+                );
+                steelRod.position.set(-0.09, -0.12, 0.3);
+                this.torso.add(steelRod);
+
+                // Black & White Kurdish Jamadani Scarf
+                const scarfCollar = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.095, 10, 24), jamadaniMat);
+                scarfCollar.position.set(0, 0.74, 0.02);
+                scarfCollar.rotation.x = Math.PI / 2 + 0.12;
+                scarfCollar.castShadow = true;
+                this.torso.add(scarfCollar);
+
+                const scarfDrapeL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.46, 0.04), jamadaniMat);
+                scarfDrapeL.position.set(-0.22, 0.54, 0.26);
+                scarfDrapeL.rotation.set(-0.12, 0.15, 0.18);
+                this.torso.add(scarfDrapeL);
+
+                const scarfDrapeR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.44, 0.04), jamadaniMat);
+                scarfDrapeR.position.set(0.22, 0.55, 0.26);
+                scarfDrapeR.rotation.set(-0.12, -0.15, -0.18);
+                this.torso.add(scarfDrapeR);
+
+                // Wolf Head
+                this.head = new THREE.Group();
+                this.head.position.set(0, 0.94, 0.05);
+                this.torso.add(this.head);
+
+                const cranium = new THREE.Mesh(new THREE.DodecahedronGeometry(0.25, 1), darkFurMat);
+                cranium.scale.set(1.05, 1.0, 1.12);
+                cranium.castShadow = true;
+                this.head.add(cranium);
+
+                [-0.21, 0.21].forEach(cx => {
+                    const cheek = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.26, 6), silverCheekMat);
+                    cheek.position.set(cx, -0.05, 0.06);
+                    cheek.rotation.z = cx < 0 ? 1.15 : -1.15;
+                    this.head.add(cheek);
+                });
+
+                const upperSnout = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.13, 0.34), furMat);
+                upperSnout.position.set(0, -0.03, 0.28);
+                this.head.add(upperSnout);
+
+                const muzzleBridge = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.32), silverCheekMat);
+                muzzleBridge.position.set(0, -0.08, 0.27);
+                this.head.add(muzzleBridge);
+
+                const lowerJaw = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.28), furMat);
+                lowerJaw.position.set(0, -0.12, 0.24);
+                this.head.add(lowerJaw);
+
+                const nose = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 10), noseMat);
+                nose.scale.set(1.2, 0.85, 1.0);
+                nose.position.set(0, -0.01, 0.45);
+                this.head.add(nose);
+
+                for (let i = 0; i < 7; i++) {
+                    const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.24, 5), i % 2 === 0 ? darkFurMat : silverCheekMat);
+                    tuft.position.set((i - 3) * 0.045, 0.23, 0.05 + (i % 2) * 0.04);
+                    tuft.rotation.set(0.35, 0, (i - 3) * -0.12);
+                    this.head.add(tuft);
+                }
+
+                const earGeo = new THREE.ConeGeometry(0.09, 0.3, 5);
+                const lEar = new THREE.Mesh(earGeo, darkFurMat);
+                lEar.position.set(-0.16, 0.28, -0.04);
+                lEar.rotation.z = 0.22;
+                this.head.add(lEar);
+
+                const rEar = new THREE.Mesh(earGeo, darkFurMat);
+                rEar.position.set(0.16, 0.28, -0.04);
+                rEar.rotation.z = -0.22;
+                this.head.add(rEar);
+
+                const eyeGeo = new THREE.SphereGeometry(0.038, 10, 10);
+                const lEye = new THREE.Mesh(eyeGeo, eyeMat);
+                lEye.position.set(-0.095, 0.06, 0.22);
+                const rEye = new THREE.Mesh(eyeGeo, eyeMat);
+                rEye.position.set(0.095, 0.06, 0.22);
+                this.head.add(lEye, rEye);
+
+                const buildArm = (sideX) => {
+                    const armGroup = new THREE.Group();
+                    armGroup.position.set(sideX, 0.62, 0);
+
+                    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.135, 0.34, 10), shirtMat);
+                    upperArm.position.y = -0.17;
+                    upperArm.castShadow = true;
+                    armGroup.add(upperArm);
+
+                    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.1, 0.36, 10), furMat);
+                    forearm.position.y = -0.5;
+                    forearm.castShadow = true;
+                    armGroup.add(forearm);
+
+                    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 10), darkFurMat);
+                    paw.position.y = -0.7;
+                    armGroup.add(paw);
+
+                    return armGroup;
+                };
+
+                this.leftArm = buildArm(-0.48);
+                this.torso.add(this.leftArm);
+
+                this.rightArm = buildArm(0.48);
+                this.tppCleaver = this.createCleaverMesh();
+                this.tppCleaver.position.set(0, -0.72, 0.16);
+                this.tppCleaver.rotation.x = Math.PI / 2;
+                this.rightArm.add(this.tppCleaver);
+                this.torso.add(this.rightArm);
+            }
+
+            createCleaverMesh() {
+                const g = new THREE.Group();
+                const handle = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.036, 0.042, 0.36, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x3b1806, roughness: 0.6 })
+                );
+                g.add(handle);
+
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.66, 0.028), this.bladeMat);
+                blade.position.set(0.13, 0.47, 0);
+                blade.castShadow = true;
+                g.add(blade);
+                return g;
+            }
+
+            buildFppWeapon() {
+                this.fppGroup = new THREE.Group();
+
+                const furMat = new THREE.MeshStandardMaterial({ map: this.createWolfFurTex(), color: 0xd4d4d8, roughness: 0.88 });
+                const fppArm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.55, 10), furMat);
+                fppArm.position.set(0.42, -0.52, -0.38);
+                fppArm.rotation.set(0.95, -0.25, 0.25);
+                this.fppGroup.add(fppArm);
+
+                this.fppCleaver = this.createCleaverMesh();
+                this.fppCleaver.scale.set(0.68, 0.68, 0.68);
+                this.fppCleaver.position.set(0.36, -0.32, -0.58);
+                this.fppCleaver.rotation.set(-0.25, -0.35, 0.25);
+                this.fppGroup.add(this.fppCleaver);
+                this.fppGroup.visible = false;
+                this.camera.add(this.fppGroup);
+                this.scene.add(this.camera);
+            }
+
+            toggleViewMode() {
+                this.mode = this.mode === 'TPP' ? 'FPP' : 'TPP';
+                this.group.visible = (this.mode === 'TPP');
+                this.fppGroup.visible = (this.mode === 'FPP');
+                const btn = document.getElementById('camModeBtn');
+                if (btn) {
+                    btn.innerHTML = this.mode === 'FPP'
+                        ? `<i class="bi bi-eye-fill"></i> یەکەم کەس (FPP)`
+                        : `<i class="bi bi-person-bounding-box"></i> سێیەم کەس (TPP)`;
+                }
+            }
+
+            bindInputs() {
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.code] = true;
+                    if (e.code === 'KeyV') this.toggleViewMode();
+                });
+                window.addEventListener('keyup', (e) => {
+                    this.keys[e.code] = false;
+                });
+
+                this.domElement.addEventListener('mousedown', (e) => {
+                    if (e.button === 0 && !document.pointerLockElement) {
+                        this.isDraggingLook = true;
+                        this.lastMouse = { x: e.clientX, y: e.clientY };
+                    }
+                });
+                window.addEventListener('mouseup', () => { this.isDraggingLook = false; });
+                window.addEventListener('mousemove', (e) => {
+                    if (document.pointerLockElement === this.domElement) {
+                        this.yaw -= e.movementX * 0.0025;
+                        this.pitch = Math.max(-0.85, Math.min(0.75, this.pitch - e.movementY * 0.0022));
+                    } else if (this.isDraggingLook) {
+                        const dx = e.clientX - this.lastMouse.x;
+                        const dy = e.clientY - this.lastMouse.y;
+                        this.yaw -= dx * 0.0045;
+                        this.pitch = Math.max(-0.85, Math.min(0.75, this.pitch - dy * 0.0035));
+                        this.lastMouse = { x: e.clientX, y: e.clientY };
+                    }
+                });
+            }
+
+            startSwing() {
+                if (this.isSwinging) return false;
+                this.isSwinging = true;
+                this.swingTimer = 0;
+                return true;
+            }
+
+            startDodge() {
+                if (this.dodgeTimer > 0) return false;
+                this.dodgeTimer = 0.32;
+                return true;
+            }
+
+            update(dt, elapsed, obstacles, rageNorm) {
+                if (this.bladeMat && this.bladeMat.uniforms) {
+                    this.bladeMat.uniforms.uTime.value = elapsed;
+                    this.bladeMat.uniforms.uRage.value = rageNorm;
+                }
+
+                let moveZ = 0;
+                let moveX = 0;
+                if (this.keys['KeyW'] || this.keys['ArrowUp']) moveZ -= 1;
+                if (this.keys['KeyS'] || this.keys['ArrowDown']) moveZ += 1;
+                if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
+                if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
+
+                moveX += this.joystick.x;
+                moveZ += this.joystick.y;
+
+                const isMoving = Math.abs(moveX) > 0.05 || Math.abs(moveZ) > 0.05;
+                const isSprinting = (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && isMoving;
+                let speed = this.moveSpeed * (isSprinting ? this.sprintMult : 1);
+
+                if (this.dodgeTimer > 0) {
+                    this.dodgeTimer -= dt;
+                    speed *= 2.4;
+                }
+
+                // FIXED Forward & Right Movement Basis Vectors
+                if (isMoving || this.dodgeTimer > 0) {
+                    const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+                    const right = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
+                    const dir = new THREE.Vector3();
+                    dir.addScaledVector(forward, -moveZ);
+                    dir.addScaledVector(right, moveX);
+                    if (dir.lengthSq() > 0.001) dir.normalize();
+
+                    const nextX = this.group.position.x + dir.x * speed * dt;
+                    const nextZ = this.group.position.z + dir.z * speed * dt;
+
+                    let blocked = false;
+                    if (nextX < -28 || nextX > 28 || nextZ > 8 || nextZ < -84) blocked = true;
+                    for (let i = 0; i < obstacles.length; i++) {
+                        const o = obstacles[i];
+                        const dx = nextX - o.x;
+                        const dz = nextZ - o.z;
+                        if (dx * dx + dz * dz < (o.r + 0.45) * (o.r + 0.45)) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+
+                    if (!blocked) {
+                        this.group.position.x = nextX;
+                        this.group.position.z = nextZ;
+                    }
+                }
+
+                // FIXED Forward Facing Orientation (no inverted + Math.PI)
+                this.group.rotation.y = this.yaw;
+
+                if (isMoving) {
+                    const freq = isSprinting ? 13 : 8.5;
+                    this.leftLeg.rotation.x = Math.sin(elapsed * freq) * 0.65;
+                    this.rightLeg.rotation.x = -Math.sin(elapsed * freq) * 0.65;
+                    this.leftArm.rotation.x = -Math.sin(elapsed * freq) * 0.45;
+                    this.pelvis.position.y = 0.98 + Math.abs(Math.sin(elapsed * freq)) * 0.07;
+                } else {
+                    this.leftLeg.rotation.x *= 0.85;
+                    this.rightLeg.rotation.x *= 0.85;
+                    this.leftArm.rotation.x *= 0.85;
+                    this.pelvis.position.y = 0.98 + Math.sin(elapsed * 2.5) * 0.02;
+                }
+                this.tailGroup.rotation.y = Math.sin(elapsed * 4.2) * 0.28;
+
+                // FIXED Overhead-to-Downward Cleaver Chop Animation
+                if (this.isSwinging) {
+                    this.swingTimer += dt;
+                    const p = Math.min(1, this.swingTimer / this.swingDuration);
+                    const arc = Math.sin(p * Math.PI);
+                    this.rightArm.rotation.x = -0.35 - Math.sin(p * Math.PI * 1.35) * 1.75;
+                    this.rightArm.rotation.z = -0.15 - arc * 0.45;
+                    this.torso.rotation.y = Math.sin(p * Math.PI) * 0.35;
+
+                    if (this.fppCleaver) {
+                        this.fppCleaver.position.set(0.36 - arc * 0.35, -0.32 - arc * 0.08, -0.58 - arc * 0.15);
+                        this.fppCleaver.rotation.set(-0.25 - arc * 1.15, -0.35 + arc * 1.1, 0.25 + arc * 0.6);
+                    }
+                    if (p >= 1) {
+                        this.isSwinging = false;
+                        this.torso.rotation.y = 0;
+                    }
+                } else {
+                    this.torso.rotation.y *= 0.8;
+                    this.rightArm.rotation.x = this.isBlocking ? -1.15 : -0.25;
+                    this.rightArm.rotation.z = this.isBlocking ? -0.55 : -0.12;
+                    if (this.fppCleaver) {
+                        const bob = isMoving ? Math.sin(elapsed * 9) * 0.02 : Math.sin(elapsed * 2) * 0.006;
+                        this.fppCleaver.position.set(0.36, -0.32 + bob, -0.58);
+                        this.fppCleaver.rotation.set(this.isBlocking ? -0.9 : -0.25, -0.35, this.isBlocking ? 1.1 : 0.25);
+                    }
+                }
+
+                const px = this.group.position.x;
+                const py = this.group.position.y;
+                const pz = this.group.position.z;
+
+                if (this.mode === 'FPP') {
+                    this.camera.position.set(px, py + 1.78, pz);
+                    const lookTarget = new THREE.Vector3(
+                        px + Math.sin(this.yaw) * Math.cos(this.pitch),
+                        py + 1.78 + Math.sin(this.pitch),
+                        pz + Math.cos(this.yaw) * Math.cos(this.pitch)
+                    );
+                    this.camera.lookAt(lookTarget);
+                } else {
+                    const dist = 4.5;
+                    const camX = px - Math.sin(this.yaw) * Math.cos(this.pitch) * dist;
+                    const camY = Math.max(0.7, py + 1.85 - Math.sin(this.pitch) * dist);
+                    const camZ = pz - Math.cos(this.yaw) * Math.cos(this.pitch) * dist;
+                    this.camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.22);
+                    this.camera.lookAt(px, py + 1.5, pz);
+                }
+
+                return { isMoving, isSprinting };
+            }
+        }
+
+        /* =====================================================================
+           5. 3D ENEMIES & 3-PHASE FATHER OF DARKNESS BOSS
+           ===================================================================== */
+        class EnemyManager {
+            constructor(scene) {
+                this.scene = scene;
+                this.enemies = [];
+            }
+
+            spawnEnemy(type, x, z) {
+                const g = new THREE.Group();
+                g.position.set(x, 0, z);
+
+                let stats = {
+                    type,
+                    name: 'گورگی تاریکی',
+                    hp: 90,
+                    maxHp: 90,
+                    damage: 12,
+                    speed: 3.4,
+                    attackRange: 2.0,
+                    isBoss: false,
+                    phase: 1,
+                    cooldown: 0,
+                    stunTimer: 0
+                };
+
+                if (type === 'shadow_wolf') {
+                    const body = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.65, 0.55, 1.3),
+                        new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 })
+                    );
+                    body.position.y = 0.65;
+                    body.castShadow = true;
+                    g.add(body);
+
+                    const head = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.45, 0.42, 0.55),
+                        new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.7 })
+                    );
+                    head.position.set(0, 0.85, 0.75);
+                    g.add(head);
+
+                    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+                    const le = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), eyeMat);
+                    le.position.set(-0.12, 0.92, 1.02);
+                    const re = le.clone();
+                    re.position.x = 0.12;
+                    g.add(le, re);
+                } else if (type === 'cave_fiend') {
+                    stats.name = 'دڕندەی ئەشکەوتی بەستەڵەک';
+                    stats.hp = 220; stats.maxHp = 220;
+                    stats.damage = 20; stats.speed = 2.8; stats.attackRange = 2.6;
+                    stats.isBoss = true;
+
+                    const torso = new THREE.Mesh(
+                        new THREE.DodecahedronGeometry(0.95, 0),
+                        new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.65 })
+                    );
+                    torso.position.y = 1.65;
+                    torso.castShadow = true;
+                    g.add(torso);
+
+                    const wingMat = new THREE.MeshStandardMaterial({ color: 0x09090b, side: THREE.DoubleSide });
+                    [[-1.2, 2.2, 0.4], [1.2, 2.2, -0.4], [-1.0, 1.4, 0.6], [1.0, 1.4, -0.6]].forEach(([wx, wy, rot]) => {
+                        const w = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.7), wingMat);
+                        w.position.set(wx, wy, -0.4);
+                        w.rotation.z = rot;
+                        g.add(w);
+                    });
+
+                    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+                    const eyes = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.14, 0.2), eyeMat);
+                    eyes.position.set(0, 2.2, 0.75);
+                    g.add(eyes);
+                } else if (type === 'father_of_darkness') {
+                    stats.name = 'باوکی تاریکی (Boss - قۆناغی ١)';
+                    stats.hp = 450; stats.maxHp = 450;
+                    stats.damage = 26; stats.speed = 3.1; stats.attackRange = 3.2;
+                    stats.isBoss = true;
+
+                    const body = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.75, 1.0, 2.8, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x180505, roughness: 0.5, metalness: 0.3 })
+                    );
+                    body.position.y = 1.4;
+                    body.castShadow = true;
+                    g.add(body);
+
+                    const crown = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.65, 1.1, 6),
+                        new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 1.4 })
+                    );
+                    crown.position.y = 3.2;
+                    g.add(crown);
+
+                    const sword = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.18, 2.8, 0.08),
+                        new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.8 })
+                    );
+                    sword.position.set(1.1, 1.6, 0.7);
+                    sword.rotation.x = 0.6;
+                    g.add(sword);
+                }
+
+                this.scene.add(g);
+                const enemyObj = { mesh: g, ...stats };
+                this.enemies.push(enemyObj);
+                return enemyObj;
+            }
+
+            clearAll() {
+                this.enemies.forEach(e => this.scene.remove(e.mesh));
+                this.enemies = [];
+            }
+
+            stunAll(duration) {
+                this.enemies.forEach(e => { e.stunTimer = duration; });
+            }
+
+            update(dt, elapsed, playerPos, onPlayerHit, onBossPhaseChange) {
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    const e = this.enemies[i];
+                    if (e.hp <= 0) continue;
+
+                    if (e.stunTimer > 0) {
+                        e.stunTimer -= dt;
+                        e.mesh.position.y = Math.sin(elapsed * 25) * 0.06;
+                        continue;
+                    } else {
+                        e.mesh.position.y = 0;
+                    }
+
+                    if (e.type === 'father_of_darkness') {
+                        const ratio = e.hp / e.maxHp;
+                        if (ratio <= 0.65 && e.phase === 1) {
+                            e.phase = 2;
+                            e.name = 'باوکی تاریکی (قۆناغی ٢: بانگهێشتی گورگ!)';
+                            e.speed = 3.6;
+                            this.spawnEnemy('shadow_wolf', e.mesh.position.x - 3, e.mesh.position.z + 2);
+                            if (onBossPhaseChange) onBossPhaseChange(2);
+                        } else if (ratio <= 0.30 && e.phase === 2) {
+                            e.phase = 3;
+                            e.name = 'باوکی تاریکی (قۆناغی ٣: تووڕەیی دۆزەخ!)';
+                            e.speed = 4.2;
+                            e.damage = 34;
+                            if (onBossPhaseChange) onBossPhaseChange(3);
+                        }
+                    }
+
+                    const dx = playerPos.x - e.mesh.position.x;
+                    const dz = playerPos.z - e.mesh.position.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+
+                    e.mesh.lookAt(playerPos.x, 0, playerPos.z);
+
+                    if (dist > e.attackRange) {
+                        e.mesh.position.x += (dx / dist) * e.speed * dt;
+                        e.mesh.position.z += (dz / dist) * e.speed * dt;
+                        e.mesh.position.y = Math.abs(Math.sin(elapsed * 8)) * 0.12;
+                    } else {
+                        e.cooldown -= dt;
+                        if (e.cooldown <= 0) {
+                            e.cooldown = e.isBoss ? (e.phase === 3 ? 0.95 : 1.35) : 1.5;
+                            if (onPlayerHit) onPlayerHit(e.damage, e);
+                        }
+                    }
+                }
+            }
+        }
+
+        /* =====================================================================
+           6. 8-CHAPTER CENTRAL KURDISH (SORANI) STORY DATA
+           ===================================================================== */
+        const STORY_DATA = {
+            chapters: [
+                {
+                    id: 1,
+                    title: "بەشی ١: ڕۆژێکی خوێناوی لە دوکانی قەسابی",
+                    subtitle: "گوندی بەرزان - بەیانی زوو",
+                    nodes: [
+                        {
+                            id: "ch1_node1",
+                            speaker: "گێڕەرەوە",
+                            narration: "بەیانییەکی زووە لە گوندی بەرزان. تەم و مژێکی سارد بەسەر چیاکاندا دابەزیوە. لە ناو دوکانی قەسابییەکەدا، تەرمی مەڕەکان لە قولاپی ئاسنین هەڵواسراون. بەخەی قەساب بە جامانە ڕەش و سپییەکەی و پێشخانە چەرمییەکەیەوە، ساتوورە گەورەکەی لەسەر کوندە دارەکە دادەکوتێت.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "ئەمڕۆ گۆشتەکە نەرم و تازەیە... بەڵام لە بەیانییەوە دەمارەکانی مل و چاوەکانم ترپە دەکەن. بۆنی خوێن و ئاگری دڕندە لە باکوورەوە دێت." }
+                            ],
+                            choices: [
+                                { text: "🔥 تیژکردنی ساتوور و بەردەوامبوون لە کار (+٥ هێرش)", next: "ch1_node2_work", effects: { sharpen: 5, meat: 1 } },
+                                { text: "👀 ڕۆیشتن بەرەو مەیدانی گوند و پشکنینی تەمەکە (+١٠ تووڕەیی)", next: "ch1_node2_look", effects: { rage: 10, teleport: { x: 0, z: -6 } } },
+                                { text: "🥩 یاری خێرای بڕینی گۆشت پێش ڕۆیشتن", next: "minigame", effects: {} }
+                            ]
+                        },
+                        {
+                            id: "ch1_node2_work",
+                            speaker: "پیرەمێردی زانا",
+                            narration: "بەخە ساتوورە پۆڵایینەکەی دادەسوێتەوە و پرژەی ئاگر لە دوکانەکە دەدرەوشێتەوە. لەو کاتەدا هاوارێکی پڕ لە ترس لە کۆڵانەکەوە دەبیسترێت!",
+                            dialogue: [
+                                { speaker: "پیرەمێردی زانا", text: "بەخە! بەخەی قەساب! فریامان کەوە! ئەوان هاتن... ڕانەمەڕەکانیان پارچە پارچە کرد!" }
+                            ],
+                            choices: [
+                                { text: "🤝 فریاکەوتنی پیرەمێرد و برینپێچکردنی (+١٥ شەرەف)", next: "ch1_node3_help", effects: { honor: 15 } },
+                                { text: "⚔️ ئامادەکردنی ساتوور و وەستان لە دەرگای دوکان (+٤ هێرش)", next: "ch1_node3_guard", effects: { attack: 4 } }
+                            ]
+                        },
+                        {
+                            id: "ch1_node2_look",
+                            speaker: "پیرەمێردی زانا",
+                            narration: "چاوە زەردە ئەڵماسییەکانی بەخە لە ناو تەمەکەدا دەبریسکێنەوە. پیرەمێردێکی بریندار بەرەو لای ڕادەکات.",
+                            dialogue: [
+                                { speaker: "پیرەمێردی زانا", text: "دڕندە تاریکەکان لە ئەشکەوتەوە هاتوونەتە خوارەوە! هیچ چەکێک کاریان تێناکات جگە لە ساتووری تۆ!" }
+                            ],
+                            choices: [
+                                { text: "🌿 برینپێچکردنی پیرەمێرد بە دەرمانی گیایی (+١٠ زێڕ، +١٠ شەرەف)", next: "ch1_node3_help", effects: { gold: 10, honor: 10 } },
+                                { text: "🔥 پرسیارکردن دەربارەی شوێنی دڕندەکان (+١٥ تووڕەیی)", next: "ch1_node3_guard", effects: { rage: 15 } }
+                            ]
+                        },
+                        {
+                            id: "ch1_node3_help",
+                            speaker: "بەخە",
+                            narration: "بەخە برینی شانی پیرەمێردەکە دەبەستێتەوە و بەڵێنی پاراستنی گوند دەدات.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "ئارام بە مامە پیرۆت. تا بەخە لەسەر پێ بێت، کەس ناتوانێت دەست بۆ بەرزان درێژ بکات." }
+                            ],
+                            choices: [
+                                { text: "⚡ بەرەو مەیدانی گوند (بەشی ٢)", next: "ch2_intro", effects: { chapter: 2, teleport: { x: 0, z: -12 } } }
+                            ]
+                        },
+                        {
+                            id: "ch1_node3_guard",
+                            speaker: "بەخە",
+                            narration: "بەخە ساتوورەکەی لەسەر شانی دادەنێت و هەنگاو دەنێتە دەرەوە.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "با بێن... ساتووری بەخە بۆ گۆشتی ووحوشیش تیژە!" }
+                            ],
+                            choices: [
+                                { text: "⚡ هەنگاونان بەرەو مەیدانی گوند (بەشی ٢)", next: "ch2_intro", effects: { chapter: 2, teleport: { x: 0, z: -12 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "بەشی ٢: هاواری گوندنشینان و پەیمانی پارێزەر",
+                    subtitle: "مەیدانی گوندی بەرزان",
+                    nodes: [
+                        {
+                            id: "ch2_intro",
+                            speaker: "ئاسنگەری گوند",
+                            narration: "خەڵکی گوند لە مەیدانەکە کۆبوونەتەوە. لە ناو دارستانەوە لوورەیەکی سامناک زەوی دەهەژێنێت.",
+                            dialogue: [
+                                { speaker: "ئاسنگەری گوند", text: "بەخە! شمشێرەکانمان دەشکێن کاتێک لەو تارماییانە دەدەین. تەنیا پۆڵای ساتوورەکەت بڕشتی هەیە!" },
+                                { speaker: "بەخە", text: "ترس دامەگرن. ئەگەر چیای هەڵگورد بڕووخێت، بەخە پشت لە گوند ناکات." }
+                            ],
+                            choices: [
+                                { text: "🍖 بەخشینی گۆشت بە خەڵک (-١ گۆشت، +٢٠ شەرەف)", next: "ch2_share_meat", effects: { meat: -1, honor: 20 } },
+                                { text: "🐺 لوورەی هۆشداری بەرەو دارستان (+٢٥ تووڕەیی)", next: "ch2_wolf_howl", effects: { rage: 25, howl: true } },
+                                { text: "🛡️ ڕێکخستنی پاسەوانانی گوند (+٥ بەرگری، +١٠ شەرەف)", next: "ch2_share_meat", effects: { defense: 5, honor: 10 } }
+                            ]
+                        },
+                        {
+                            id: "ch2_share_meat",
+                            speaker: "پیرەمێردی زانا",
+                            narration: "خەڵک دوعای خێر بۆ بەخە دەکەن و نەخشەیەکی کۆنی پێشکەش دەکەن.",
+                            dialogue: [
+                                { speaker: "پیرەمێردی زانا", text: "ئەم نەخشە کۆنەی دارستانت پێشکەش بێت کە شوێنی پەرستگای دێرینی تێدایە." }
+                            ],
+                            choices: [
+                                { text: "🌲 چوونە ناو دارستانی تاریک (بەشی ٣)", next: "ch3_intro", effects: { item: "نەخشەی دێرین", chapter: 3, teleport: { x: 0, z: -26 } } }
+                            ]
+                        },
+                        {
+                            id: "ch2_wolf_howl",
+                            speaker: "بەخە",
+                            narration: "لوورەی بەخە دارستانەکە دەهەژێنێت و هێزی باوباپیرانی تێدا بەخەبەر دێتەوە.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "من بەخەم... قەسابی گوندی بەرزان و نەوەی گورگەکانی ئاگر!" }
+                            ],
+                            choices: [
+                                { text: "🔥 هەڵگرتنی مەشخەڵ و چوونە ناو دارستان (بەشی ٣)", next: "ch3_intro", effects: { attack: 6, chapter: 3, teleport: { x: 0, z: -26 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    title: "بەشی ٣: شەڕی یەکەمی گورگە تاریکەکان",
+                    subtitle: "قەراغی دارستانی تاریک",
+                    nodes: [
+                        {
+                            id: "ch3_intro",
+                            speaker: "گێڕەرەوە",
+                            narration: "لە ناو تەم و سێبەری دارە بەرزەکاندا، دوو گورگی تاریکی بە چاوی سوورەوە پەلامارت دەدەن! بە WASD بجووڵێ و بە Space یان دوگمەی هێرش لە ٣D لێیان بدە!",
+                            dialogue: [
+                                { speaker: "بەخە", text: "هاتنە شوێنی هەڵە! ساتوورەکەم تامەزرۆی بڕینی گۆشتی ئێوەیە!" }
+                            ],
+                            choices: [
+                                { text: "⚔️ دەستپێکردنی شەڕی ڕاستەوخۆی ٣D لەگەڵ گورگەکان!", next: "ch3_combat_wait", effects: { spawn: [{ type: "shadow_wolf", x: -3, z: -33 }, { type: "shadow_wolf", x: 3, z: -34 }] } }
+                            ]
+                        },
+                        {
+                            id: "ch3_combat_node",
+                            speaker: "بەخە",
+                            narration: "هەردوو گورگە تاریکەکە لە ناو خوێنی ڕەشدا کەوتنە سەر زەوی. خوێنەکە بۆنی گوگردی ئەشکەوتی بەستەڵەک دەدات.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "ئەمە گیانلەبەری سروشتی نییە... دەبێت بگەمە پەرستگای دێرین." }
+                            ],
+                            choices: [
+                                { text: "🏛️ بەرەو پەرستگای دێرین (بەشی ٤)", next: "ch4_intro", effects: { xp: 60, chapter: 4, teleport: { x: 0, z: -48 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 4,
+                    title: "بەشی ٤: پەرستگای دێرین و خەنجەری دەبان",
+                    subtitle: "پەرستگای بەردینی هەزار ساڵە",
+                    nodes: [
+                        {
+                            id: "ch4_intro",
+                            speaker: "بەخە",
+                            narration: "کۆڵەکە بەردینەکان بە نەخشی زێڕین دەدرەوشێنەوە. لەسەر قوربانگاکە خەنجەرێکی پۆڵایینی دەبان چەقێنراوە.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "باپیرە گەورەی من پاسەوانی نێوان جیهانی مرۆڤ و گورگ بووە!" }
+                            ],
+                            choices: [
+                                { text: "🗡️ ڕاکێشانی خەنجەری دەبان (+١٤ هێرش)", next: "ch4_pull_blade", effects: { item: "خەنجەری دەبان", attack: 14 } },
+                                { text: "🙏 نوێژکردن بۆ گیانی باپیران (+٣٥ HP، +١٠ بەرگری)", next: "ch4_pray", effects: { health: 35, defense: 10 } }
+                            ]
+                        },
+                        {
+                            id: "ch4_pull_blade",
+                            speaker: "بەخە",
+                            narration: "ڕووناکییەکی زێڕین بە ناو ساتوورەکەتدا تێدەپەڕێت و هێزەکەت دووهێندە دەبێت!",
+                            dialogue: [
+                                { speaker: "بەخە", text: "سوێند دەخۆم هیچ دڕندەیەک بە زیندووی لەم چیایە دەرناچێت!" }
+                            ],
+                            choices: [
+                                { text: "🏔️ بەرەو ئەشکەوتی بەستەڵەک (بەشی ٥)", next: "ch5_intro", effects: { chapter: 5, teleport: { x: 0, z: -60 } } }
+                            ]
+                        },
+                        {
+                            id: "ch4_pray",
+                            speaker: "بەخە",
+                            narration: "هێمنی و هێزی ڕۆحی باپیران دەڕژێتە ناو جەستەتەوە و برینەکانت چاک دەبنەوە.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "ئێستا هەم چەکم پێیە و هەم دڵم ئارامە." }
+                            ],
+                            choices: [
+                                { text: "🏔️ بەرەو ئەشکەوتی بەستەڵەک (بەشی ٥)", next: "ch5_intro", effects: { chapter: 5, teleport: { x: 0, z: -60 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 5,
+                    title: "بەشی ٥: دڕندەی ئەشکەوتی بەستەڵەک",
+                    subtitle: "دەمی ئەشکەوتی شاخی هەڵگورد",
+                    nodes: [
+                        {
+                            id: "ch5_intro",
+                            speaker: "دڕندەی ئەشکەوت",
+                            narration: "زەبەلاحێکی چوار باڵی ڕەش لە تاریکیی ئەشکەوتەکەوە دێتە دەرەوە! لە ٣D ڕووبەڕووی ببەرەوە!",
+                            dialogue: [
+                                { speaker: "دڕندەی ئەشکەوت", text: "بەخە... ئەمشەو گۆشتی تۆ دەبێتە خواردنی من!" },
+                                { speaker: "بەخە", text: "وەرە پێشەوە دڕندە! فێرت دەکەم قەسابی بەرزان چۆن گۆشت دەبڕێت!" }
+                            ],
+                            choices: [
+                                { text: "⚔️ شەڕی ڕاستەوخۆ لەگەڵ دڕندەی ئەشکەوت!", next: "ch5_combat_wait", effects: { spawn: [{ type: "cave_fiend", x: 0, z: -68 }] } }
+                            ]
+                        },
+                        {
+                            id: "ch5_combat_node",
+                            speaker: "بەخە",
+                            narration: "باڵی دڕندەکە دەبڕیت و پاشەکشە دەکات، بەڵام هاوار دەکات کە باوکی تاریکی لە ڕێگەدایە!",
+                            dialogue: [
+                                { speaker: "بەخە", text: "گوندەکە دەبێتە گۆڕستانی خۆت و گەورەکەشت!" }
+                            ],
+                            choices: [
+                                { text: "🏃 گەڕانەوەی خێرا بۆ قەسابخانە (بەشی ٦)", next: "ch6_intro", effects: { xp: 100, chapter: 6, teleport: { x: 0, z: 3.5 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 6,
+                    title: "بەشی ٦: یەکگرتنی گوندنشینان و چەکی نوێ",
+                    subtitle: "قەسابخانەی بەرزان - ئامادەکاری",
+                    nodes: [
+                        {
+                            id: "ch6_intro",
+                            speaker: "ئاسنگەری گوند",
+                            narration: "هەموو گوند لە بەردەم دوکانەکەت کۆدەبنەوە و ئاسنگەر ئاگری کوندەکە گەش دەکاتەوە.",
+                            dialogue: [
+                                { speaker: "ئاسنگەری گوند", text: "پۆڵای خەنجەرەکە و ساتوورەکەت تێکەڵ دەکەم تا خودی ئەهریمەنیش لە دەستی بهەژێت!" }
+                            ],
+                            choices: [
+                                { text: "🔥 تێکەڵکردنی چەکەکان (+١٨ هێرش، +١٥ شەرەف)", next: "ch6_forge_cleaver", effects: { attack: 18, honor: 15, sharpen: 10 } },
+                                { text: "🍖 خواردنی گۆشتی برژاو (+٦٠ HP، Max HP = ١٦٠)", next: "ch6_feast", effects: { maxHealth: 160, health: 70 } }
+                            ]
+                        },
+                        {
+                            id: "ch6_forge_cleaver",
+                            speaker: "بەخە",
+                            narration: "ساتووری دەبانی بەخەی قەساب بە بڵێسەی ئاگری دێرین دروست دەکرێت!",
+                            dialogue: [
+                                { speaker: "بەخە", text: "ئەمە چەکی ئازادیی بەرزانە! با تاریکی بێت!" }
+                            ],
+                            choices: [
+                                { text: "⚔️ بەرەو شەڕی شەقامەکانی گوند (بەشی ٧)", next: "ch7_intro", effects: { chapter: 7, teleport: { x: 0, z: -14 } } }
+                            ]
+                        },
+                        {
+                            id: "ch6_feast",
+                            speaker: "بەخە",
+                            narration: "دوای خواردنی گۆشتی تازە، تەواوی هێزت دەگەڕێتەوە.",
+                            dialogue: [
+                                { speaker: "بەخە", text: "ئێستا لەش و گیانم ئامادەیە بۆ جەنگ." }
+                            ],
+                            choices: [
+                                { text: "⚔️ بەرەو شەڕی شەقامەکانی گوند (بەشی ٧)", next: "ch7_intro", effects: { chapter: 7, teleport: { x: 0, z: -14 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 7,
+                    title: "بەشی ٧: گەمارۆدانی گوند و شەپۆلی تاریکی",
+                    subtitle: "شەقامەکانی بەرزان",
+                    nodes: [
+                        {
+                            id: "ch7_intro",
+                            speaker: "بەخە",
+                            narration: "شەپۆلی گورگە تاریکەکان پەلاماری مەیدانی گوند دەدەن! بە هێزی ٣D بەرگری لە گوند بکە!",
+                            dialogue: [
+                                { speaker: "بەخە", text: "تا یەک دڵۆپ خوێن لە دەمارەکانمدا بێت، ناهێڵم دەستان بگاتە کەس!" }
+                            ],
+                            choices: [
+                                { text: "🩸 چالاککردنی تووڕەیی خوێناوی و شەڕی شەپۆلەکان!", next: "ch7_combat_wait", effects: { rage: 60, spawn: [{ type: "shadow_wolf", x: -4, z: -19 }, { type: "shadow_wolf", x: 4, z: -19 }, { type: "shadow_wolf", x: 0, z: -22 }] } }
+                            ]
+                        },
+                        {
+                            id: "ch7_combat_node",
+                            speaker: "پیرەمێردی زانا",
+                            narration: "بەخە هەموو شەپۆلەکانی تێکشکاند! بەڵام زەوی لە ژێر پێتان دەلەرزێت...",
+                            dialogue: [
+                                { speaker: "پیرەمێردی زانا", text: "گەورەکەیان لە ناو گۆڕەپانی ئەشکەوتی بەستەڵەک چاوەڕوانتە!" }
+                            ],
+                            choices: [
+                                { text: "💀 بەرەو شەڕی کۆتایی لەگەڵ باوکی تاریکی (بەشی ٨)", next: "ch8_intro", effects: { chapter: 8, teleport: { x: 0, z: -64 } } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 8,
+                    title: "بەشی ٨: شەڕی کۆتایی - باوکی تاریکی (٣ قۆناغ)",
+                    subtitle: "گۆڕەپانی خوێناوی شاخی بەرزان",
+                    nodes: [
+                        {
+                            id: "ch8_intro",
+                            speaker: "باوکی تاریکی",
+                            narration: "زەبەلاحترین ئەهریمەن بە شمشێرێکی ئاگرینی سێ مەترییەوە لە ناوەڕاستی گۆڕەپانەکە وەستاوە. شەڕەکە ٣ قۆناغی هەیە: لە ٦٥٪ HP گورگ بانگ دەکات و لە ٣٠٪ HP تووڕەیی دۆزەخ چالاک دەکات!",
+                            dialogue: [
+                                { speaker: "باوکی تاریکی", text: "بەخەی قەساب... تۆ دوا بەربەستی ئەم خاکەی!" },
+                                { speaker: "بەخە", text: "بەم ساتوورە سەرت دەخەمە سەر کوندەی قەسابخانەکەم!" }
+                            ],
+                            choices: [
+                                { text: "⚔️ دەستپێکردنی شەڕی ئەفسانەیی ٣ قۆناغی!", next: "ch8_combat_wait", effects: { spawn: [{ type: "father_of_darkness", x: 0, z: -73 }] } }
+                            ]
+                        },
+                        {
+                            id: "ch8_victory",
+                            speaker: "گێڕەرەوە",
+                            narration: "خۆر لە پشتی چیای هەڵگوردەوە هەڵدێت. باوکی تاریکی بوو بە خۆڵەمێش! خەڵکی گوندی بەرزان بە دەهۆڵ و زوڕناوە پێشوازی لە 'پارێزەری ئەفسانەیی بەرزان' دەکەن!",
+                            dialogue: [
+                                { speaker: "بەخە", text: "سوپاس هاوڕێیان! ئێستا دوکانەکە کراوەیە، با جەژن بگێڕین!" }
+                            ],
+                            choices: [
+                                { text: "🏆 بینینی ڕیزبەندی پاڵەوانانی بەرزان", next: "open_leaderboard", effects: { honor: 100 } },
+                                { text: "🔄 دەستپێکردنەوە لە بەشی ١ بە هەموو هێزەکانتەوە", next: "ch1_node1", effects: { restart: true, teleport: { x: 0, z: 3.5 } } }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        /* =====================================================================
+           7. MAIN GAME STATE, SCENE INITIALIZATION & 60 FPS RENDER LOOP
+           ===================================================================== */
+        const gameState = {
+            player: {
+                hp: 100, maxHp: 100,
+                rage: 35,
+                stamina: 100,
+                attack: 28,
+                defense: 12,
+                sharpenBonus: 0,
+                gold: 50,
+                meat: 3,
+                honor: 50
+            },
+            inventory: [
+                { id: 'cleaver', name: 'ساتووری بەخەی قەساب', bonus: '+١٥ هێرش', desc: 'پۆڵای دەبانی ئاگرین' },
+                { id: 'apron', name: 'پێشخانی چەرمی مانگا', bonus: '+١٠ بەرگری', desc: 'چەرمی ئەستووری پارێزەر' },
+                { id: 'jamadani', name: 'جامانەی بەرزان', bonus: '+١٠ شەرەف', desc: 'نیشانەی نەوەی گورگەکان' }
+            ],
+            chapter: 1,
+            currentNodeId: 'ch1_node1',
+            kills: 0,
+            pendingCombatNext: null,
+            bloodRageActive: false,
+            bloodRageTimer: 0
+        };
+
+        const canvas = document.getElementById('webglCanvas');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x090504, 0.022);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 140);
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.25;
+
+        scene.add(new THREE.AmbientLight(0x3a241b, 0.78));
+        const moonLight = new THREE.DirectionalLight(0xdbeafe, 1.35);
+        moonLight.position.set(18, 28, -22);
+        moonLight.castShadow = true;
+        moonLight.shadow.mapSize.width = 1024;
+        moonLight.shadow.mapSize.height = 1024;
+        scene.add(moonLight);
+
+        const world = new BarzanWorld(scene);
+        const bakha = new BakhaController(scene, camera, canvas);
+        const enemyMgr = new EnemyManager(scene);
+
+        // 3D Spark Particle Pool
+        const sparkCount = 60;
+        const sparkGeo = new THREE.BufferGeometry();
+        const sparkPos = new Float32Array(sparkCount * 3);
+        const sparkVel = [];
+        for (let i = 0; i < sparkCount; i++) {
+            sparkPos[i * 3 + 1] = -20;
+            sparkVel.push(new THREE.Vector3());
+        }
+        sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+        const sparkPoints = new THREE.Points(sparkGeo, new THREE.PointsMaterial({
+            color: 0xf59e0b, size: 0.14, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending
+        }));
+        scene.add(sparkPoints);
+
+        function emitSparks(origin, count = 25, colorHex = 0xf59e0b) {
+            sparkPoints.material.color.setHex(colorHex);
+            const arr = sparkGeo.attributes.position.array;
+            for (let i = 0; i < count; i++) {
+                arr[i * 3 + 0] = origin.x;
+                arr[i * 3 + 1] = origin.y + 0.9;
+                arr[i * 3 + 2] = origin.z;
+                sparkVel[i].set((Math.random() - 0.5) * 5, Math.random() * 4 + 1.5, (Math.random() - 0.5) * 5);
+            }
+            sparkGeo.attributes.position.needsUpdate = true;
+        }
+
+        function showToast(msg, type = 'warning') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = `alert alert-${type} py-2 px-3 mb-2 shadow-lg border-0`;
+            el.style.fontSize = '0.85rem';
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+
+        function spawnFloatingText(text, color = '#fbbf24') {
+            const div = document.createElement('div');
+            div.className = 'floating-combat-text';
+            div.style.left = '50%';
+            div.style.top = '44%';
+            div.style.color = color;
+            div.textContent = text;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 1050);
+        }
+
+        function performAttack() {
+            if (!bakha.startSwing()) return;
+            bakhaAudio.playSfx('slash');
+
+            const pPos = bakha.group.position;
+            const forward = new THREE.Vector3(Math.sin(bakha.yaw), 0, Math.cos(bakha.yaw));
+            let hitAny = false;
+
+            enemyMgr.enemies.forEach(e => {
+                if (e.hp <= 0) return;
+                const toEnemy = new THREE.Vector3().subVectors(e.mesh.position, pPos);
+                const dist = toEnemy.length();
+                if (dist <= 3.6) {
+                    toEnemy.normalize();
+                    const dot = forward.dot(toEnemy);
+                    if (dot > 0.15 || dist < 1.8) {
+                        hitAny = true;
+                        let dmg = gameState.player.attack + gameState.player.sharpenBonus + Math.floor(Math.random() * 8);
+                        if (gameState.bloodRageActive) dmg = Math.floor(dmg * 1.85);
+
+                        e.hp -= dmg;
+                        bakhaAudio.playSfx('hit');
+                        emitSparks(e.mesh.position, 28, 0xef4444);
+                        spawnFloatingText(`-${dmg}`, gameState.bloodRageActive ? '#ef4444' : '#fbbf24');
+
+                        const ch = document.getElementById('crosshair');
+                        if (ch) { ch.classList.add('hit'); setTimeout(() => ch.classList.remove('hit'), 150); }
+
+                        gameState.player.rage = Math.min(100, gameState.player.rage + 10);
+
+                        if (e.hp <= 0) {
+                            scene.remove(e.mesh);
+                            gameState.kills++;
+                            gameState.player.gold += e.isBoss ? 80 : 20;
+                            gameState.player.meat += e.isBoss ? 3 : 1;
+                            gameState.player.honor += e.isBoss ? 40 : 12;
+                            bakhaAudio.playSfx('coin');
+                            spawnFloatingText(`${e.name} تێکشکێنرا!`, '#10b981');
+                        }
+                    }
+                }
+            });
+
+            if (hitAny) {
+                updateHUD();
+                checkCombatCompletion();
+            }
+        }
+
+        function performHowl() {
+            if (gameState.player.rage < 25) {
+                spawnFloatingText('پێویستت بە ٢٥٪ تووڕەییە!', '#ef4444');
+                return;
+            }
+            gameState.player.rage -= 25;
+            bakhaAudio.playSfx('howl');
+            enemyMgr.stunAll(3.0);
+            emitSparks(bakha.group.position, 45, 0x38bdf8);
+            spawnFloatingText('لوورەی گورگ! دوژمنان سڕ بوون!', '#38bdf8');
+            updateHUD();
+        }
+
+        function performBloodRage() {
+            if (gameState.player.rage < 50) {
+                spawnFloatingText('پێویستت بە ٥٠٪ تووڕەییە!', '#ef4444');
+                return;
+            }
+            gameState.player.rage -= 50;
+            gameState.bloodRageActive = true;
+            gameState.bloodRageTimer = 8.0;
+            document.getElementById('rageVignette').classList.add('active');
+            bakhaAudio.playSfx('howl');
+            spawnFloatingText('تووڕەیی خوێناوی چالاک بوو! (٨ چرکە)', '#ef4444');
+            updateHUD();
+        }
+
+        function performDodge() {
+            if (gameState.player.stamina < 25) return;
+            if (bakha.startDodge()) {
+                gameState.player.stamina -= 25;
+                bakhaAudio.playSfx('slash');
+                updateHUD();
+            }
+        }
+
+        function eatMeatHeal() {
+            if (gameState.player.meat <= 0) {
+                spawnFloatingText('گۆشتت پێ نەماوە!', '#ef4444');
+                return;
+            }
+            gameState.player.meat--;
+            gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + 35);
+            bakhaAudio.playSfx('coin');
+            spawnFloatingText('+٣٥ تەندروستی (گۆشتی برژاو)', '#10b981');
+            updateHUD();
+        }
+
+        function checkCombatCompletion() {
+            const alive = enemyMgr.enemies.filter(e => e.hp > 0);
+            if (alive.length === 0 && gameState.pendingCombatNext) {
+                const nextNode = gameState.pendingCombatNext;
+                gameState.pendingCombatNext = null;
+                document.getElementById('bossHud').classList.remove('active');
+                setTimeout(() => loadStoryNode(nextNode), 900);
+            }
+        }
+
+        function loadStoryNode(nodeId) {
+            let targetNode = null;
+            let targetChapter = null;
+            for (const ch of STORY_DATA.chapters) {
+                for (const nd of ch.nodes) {
+                    if (nd.id === nodeId) {
+                        targetNode = nd;
+                        targetChapter = ch;
+                        break;
+                    }
+                }
+                if (targetNode) break;
+            }
+            if (!targetNode) return;
+
+            gameState.currentNodeId = nodeId;
+            gameState.chapter = targetChapter.id;
+
+            document.getElementById('storyChapterTitle').textContent = targetChapter.title;
+            document.getElementById('storySubtitle').textContent = targetChapter.subtitle;
+            document.getElementById('locationBadge').textContent = targetChapter.subtitle;
+            document.getElementById('storySpeaker').textContent = targetNode.speaker;
+            document.getElementById('storyNarration').textContent = targetNode.narration;
+
+            const dlgHtml = (targetNode.dialogue || []).map(d => `<div class="mt-2"><strong class="text-warning">${d.speaker}:</strong> "${d.text}"</div>`).join('');
+            document.getElementById('storyDialogue').innerHTML = dlgHtml;
+
+            const choicesBox = document.getElementById('storyChoices');
+            choicesBox.innerHTML = '';
+            (targetNode.choices || []).forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn-hybrid w-100';
+                btn.innerHTML = `<span>${c.text}</span><i class="bi bi-chevron-left"></i>`;
+                btn.onclick = () => handleChoice(c);
+                choicesBox.appendChild(btn);
+            });
+
+            document.getElementById('storyDock').classList.remove('minimized');
+        }
+
+        function handleChoice(choice) {
+            bakhaAudio.playSfx('click');
+            const eff = choice.effects || {};
+
+            if (eff.sharpen) { gameState.player.sharpenBonus += eff.sharpen; bakhaAudio.playSfx('sharpen'); emitSparks(bakha.group.position, 30, 0xf59e0b); }
+            if (eff.rage) gameState.player.rage = Math.min(100, gameState.player.rage + eff.rage);
+            if (eff.honor) gameState.player.honor += eff.honor;
+            if (eff.meat) gameState.player.meat = Math.max(0, gameState.player.meat + eff.meat);
+            if (eff.gold) gameState.player.gold += eff.gold;
+            if (eff.attack) gameState.player.attack += eff.attack;
+            if (eff.defense) gameState.player.defense += eff.defense;
+            if (eff.maxHealth) gameState.player.maxHp = eff.maxHealth;
+            if (eff.health) gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + eff.health);
+            if (eff.howl) performHowl();
+            if (eff.item) {
+                gameState.inventory.push({ id: 'item_' + Date.now(), name: eff.item, bonus: '+١٠ هێز', desc: 'دۆزراوە لە سەرکێشی بەرزان' });
+                spawnFloatingText(`+ ${eff.item}`, '#fbbf24');
+            }
+            if (eff.teleport) {
+                bakha.group.position.set(eff.teleport.x, 0, eff.teleport.z);
+            }
+            if (eff.restart) {
+                gameState.player.hp = gameState.player.maxHp;
+                gameState.chapter = 1;
+                enemyMgr.clearAll();
+            }
+
+            if (eff.spawn) {
+                enemyMgr.clearAll();
+                eff.spawn.forEach(s => enemyMgr.spawnEnemy(s.type, s.x, s.z));
+                const nextMap = {
+                    'ch3_combat_wait': 'ch3_combat_node',
+                    'ch5_combat_wait': 'ch5_combat_node',
+                    'ch7_combat_wait': 'ch7_combat_node',
+                    'ch8_combat_wait': 'ch8_victory'
+                };
+                gameState.pendingCombatNext = nextMap[choice.next] || null;
+                document.getElementById('storyDock').classList.add('minimized');
+                spawnFloatingText('دوژمنەکان لە پێشەوەن! هێرش بکە!', '#ef4444');
+                updateHUD();
+                return;
+            }
+
+            updateHUD();
+
+            if (choice.next === 'minigame') {
+                openMeatMinigame();
+            } else if (choice.next === 'open_leaderboard') {
+                openLeaderboardModal();
+            } else if (choice.next) {
+                loadStoryNode(choice.next);
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('hpBar').style.width = `${(gameState.player.hp / gameState.player.maxHp) * 100}%`;
+            document.getElementById('hpText').textContent = `${gameState.player.hp}/${gameState.player.maxHp}`;
+            document.getElementById('rageBar').style.width = `${gameState.player.rage}%`;
+            document.getElementById('rageText').textContent = `${gameState.player.rage}%`;
+            document.getElementById('staminaBar').style.width = `${gameState.player.stamina}%`;
+            document.getElementById('goldText').textContent = gameState.player.gold;
+            document.getElementById('meatText').textContent = gameState.player.meat;
+            document.getElementById('honorText').textContent = gameState.player.honor;
+        }
+
+        // Meat Cutting Minigame
+        let miniScore = 0;
+        let miniHanging = [];
+        function openMeatMinigame() {
+            const modal = new bootstrap.Modal(document.getElementById('minigameModal'));
+            modal.show();
+            miniScore = 0;
+            document.getElementById('miniScore').textContent = '0';
+            miniHanging = [
+                { x: 110, y: 30, w: 68, h: 130, cuts: 0, needed: 3, angle: 0, speed: 1.9, alive: true },
+                { x: 280, y: 20, w: 80, h: 150, cuts: 0, needed: 4, angle: 0.4, speed: 2.3, alive: true },
+                { x: 450, y: 35, w: 72, h: 125, cuts: 0, needed: 3, angle: -0.3, speed: 1.6, alive: true }
+            ];
+            const mc = document.getElementById('minigameCanvas');
+            mc.onmousedown = (e) => {
+                const rect = mc.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (mc.width / rect.width);
+                const my = (e.clientY - rect.top) * (mc.height / rect.height);
+                miniHanging.forEach(m => {
+                    if (!m.alive) return;
+                    const cx = m.x + Math.sin(m.angle) * 28;
+                    if (mx >= cx && mx <= cx + m.w && my >= m.y && my <= m.y + m.h) {
+                        m.cuts++;
+                        miniScore += 40;
+                        bakhaAudio.playSfx('hit');
+                        if (m.cuts >= m.needed) {
+                            m.alive = false;
+                            gameState.player.meat++;
+                            gameState.player.gold += 12;
+                            bakhaAudio.playSfx('coin');
+                            updateHUD();
+                            setTimeout(() => { m.cuts = 0; m.alive = true; }, 1000);
+                        }
+                        document.getElementById('miniScore').textContent = miniScore;
+                    }
+                });
+            };
+            requestAnimationFrame(drawMeatMinigame);
+        }
+
+        function drawMeatMinigame() {
+            const el = document.getElementById('minigameModal');
+            if (!el.classList.contains('show')) return;
+            const mc = document.getElementById('minigameCanvas');
+            const ctx = mc.getContext('2d');
+            ctx.fillStyle = '#140804';
+            ctx.fillRect(0, 0, mc.width, mc.height);
+            const t = performance.now() / 1000;
+
+            miniHanging.forEach(m => {
+                if (!m.alive) return;
+                m.angle = Math.sin(t * m.speed) * 0.25;
+                ctx.save();
+                ctx.translate(m.x + m.w / 2, 10);
+                ctx.rotate(m.angle);
+                ctx.fillStyle = '#991b1b';
+                ctx.fillRect(-m.w / 2, m.y, m.w, m.h);
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 13px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${m.cuts}/${m.needed}`, 0, m.y + m.h - 10);
+                ctx.restore();
+            });
+            requestAnimationFrame(drawMeatMinigame);
+        }
+
+        function openInventoryModal() {
+            const box = document.getElementById('inventoryGrid');
+            box.innerHTML = gameState.inventory.map(item => `
+                <div class="col-md-6">
+                    <div class="hybrid-glass-panel p-3 h-100">
+                        <strong class="text-warning d-block">${item.name}</strong>
+                        <span class="badge bg-success my-1">${item.bonus}</span>
+                        <p class="small text-secondary mb-0">${item.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+            new bootstrap.Modal(document.getElementById('inventoryModal')).show();
+        }
+
+        function openLeaderboardModal() {
+            const list = [
+                { name: 'بەخەی قەساب (تۆ)', honor: gameState.player.honor, kills: gameState.kills, chapter: gameState.chapter },
+                { name: 'شێری هەڵگورد', honor: 185, kills: 12, chapter: 6 },
+                { name: 'ئاسنگەر کاوە', honor: 130, kills: 7, chapter: 4 }
+            ].sort((a, b) => b.honor - a.honor);
+
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = list.map((row, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td class="text-warning fw-bold">${row.name}</td>
+                    <td>${row.honor}</td>
+                    <td>${row.kills}</td>
+                    <td>بەشی ${row.chapter}</td>
+                </tr>
+            `).join('');
+            new bootstrap.Modal(document.getElementById('leaderboardModal')).show();
+        }
+
+        // Mobile Virtual Joystick
+        const joyZone = document.getElementById('mobileJoystick');
+        const joyKnob = document.getElementById('mobileJoystickKnob');
+        if (joyZone && joyKnob) {
+            let joyActive = false;
+            const handleJoy = (clientX, clientY) => {
+                const rect = joyZone.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                let dx = (clientX - cx) / 40;
+                let dy = (clientY - cy) / 40;
+                const mag = Math.hypot(dx, dy);
+                if (mag > 1) { dx /= mag; dy /= mag; }
+                bakha.joystick.x = dx;
+                bakha.joystick.y = dy;
+                joyKnob.style.transform = `translate(calc(-50% + ${dx * 32}px), calc(-50% + ${dy * 32}px))`;
+            };
+            joyZone.addEventListener('touchstart', (e) => { joyActive = true; handleJoy(e.touches[0].clientX, e.touches[0].clientY); });
+            joyZone.addEventListener('touchmove', (e) => { if (joyActive) { e.preventDefault(); handleJoy(e.touches[0].clientX, e.touches[0].clientY); } });
+            joyZone.addEventListener('touchend', () => {
+                joyActive = false;
+                bakha.joystick.x = 0; bakha.joystick.y = 0;
+                joyKnob.style.transform = 'translate(-50%, -50%)';
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (document.activeElement.tagName !== 'BUTTON') {
+                    e.preventDefault();
+                    performAttack();
+                }
+            }
+            if (e.code === 'KeyQ') performHowl();
+            if (e.code === 'KeyR') performBloodRage();
+            if (e.code === 'KeyE') eatMeatHeal();
+            if (e.code === 'KeyC') performDodge();
+        });
+
+        canvas.addEventListener('dblclick', () => {
+            try {
+                if (canvas.requestPointerLock) {
+                    const p = canvas.requestPointerLock();
+                    if (p && p.catch) p.catch(() => {});
+                }
+            } catch (e) {}
+        });
+
+        document.getElementById('btnAttack').onclick = performAttack;
+        document.getElementById('btnHowl').onclick = performHowl;
+        document.getElementById('btnRage').onclick = performBloodRage;
+        document.getElementById('btnHeal').onclick = eatMeatHeal;
+        document.getElementById('btnDodge').onclick = performDodge;
+        document.getElementById('camModeBtn').onclick = () => bakha.toggleViewMode();
+        document.getElementById('btnAudio').onclick = () => {
+            const on = bakhaAudio.toggle();
+            document.getElementById('btnAudio').innerHTML = on ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>';
+        };
+        document.getElementById('btnMinigame').onclick = openMeatMinigame;
+        document.getElementById('btnInventory').onclick = openInventoryModal;
+        document.getElementById('btnLeaderboard').onclick = openLeaderboardModal;
+        document.getElementById('btnSave').onclick = () => {
+            try {
+                localStorage.setItem('bakha_3d_preview_save', JSON.stringify(gameState));
+                bakhaAudio.playSfx('coin');
+                showToast('یارییەکەت بە سەرکەوتوویی پاشەکەوت کرا!', 'success');
+            } catch (e) {}
+        };
+        document.getElementById('toggleStoryBtn').onclick = () => document.getElementById('storyDock').classList.toggle('minimized');
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 60 FPS Main Animation Loop
+        let lastTime = performance.now();
+        let fpsFrames = 0;
+        let fpsClock = 0;
+
+        function gameLoop(now) {
+            requestAnimationFrame(gameLoop);
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+            const elapsed = now / 1000;
+
+            fpsFrames++;
+            fpsClock += dt;
+            if (fpsClock >= 0.5) {
+                const fps = Math.round(fpsFrames / fpsClock);
+                const fpsBadge = document.getElementById('fpsCounter');
+                if (fpsBadge) fpsBadge.textContent = `${fps} FPS`;
+                fpsFrames = 0;
+                fpsClock = 0;
+            }
+
+            gameState.player.stamina = Math.min(100, gameState.player.stamina + dt * 16);
+            if (gameState.bloodRageActive) {
+                gameState.bloodRageTimer -= dt;
+                if (gameState.bloodRageTimer <= 0) {
+                    gameState.bloodRageActive = false;
+                    document.getElementById('rageVignette').classList.remove('active');
+                }
+            }
+
+            world.update(dt, elapsed);
+            bakha.update(dt, elapsed, world.obstacles, gameState.bloodRageActive ? 1.0 : 0.0);
+
+            const arr = sparkGeo.attributes.position.array;
+            for (let i = 0; i < sparkCount; i++) {
+                if (arr[i * 3 + 1] > -10) {
+                    arr[i * 3 + 0] += sparkVel[i].x * dt;
+                    arr[i * 3 + 1] += sparkVel[i].y * dt;
+                    arr[i * 3 + 2] += sparkVel[i].z * dt;
+                    sparkVel[i].y -= 9.8 * dt;
+                    if (arr[i * 3 + 1] < 0) arr[i * 3 + 1] = -20;
+                }
+            }
+            sparkGeo.attributes.position.needsUpdate = true;
+
+            enemyMgr.update(dt, elapsed, bakha.group.position, (dmg) => {
+                const finalDmg = Math.max(3, dmg - Math.floor(gameState.player.defense * 0.4));
+                gameState.player.hp = Math.max(0, gameState.player.hp - finalDmg);
+                bakhaAudio.playSfx('hit');
+                spawnFloatingText(`-${finalDmg} HP`, '#ef4444');
+                if (gameState.player.hp <= 0) {
+                    gameState.player.hp = 40;
+                    spawnFloatingText('بەخە بە هێزی گورگ هەستایەوە!', '#fbbf24');
+                }
+                updateHUD();
+            }, (phase) => {
+                bakhaAudio.playSfx('boss_roar');
+                emitSparks(bakha.group.position, 40, 0xef4444);
+                spawnFloatingText(`قۆناغی ${phase}ی بۆس دەستی پێکرد!`, '#ef4444');
+            });
+
+            const activeBoss = enemyMgr.enemies.find(e => e.isBoss && e.hp > 0);
+            const bossHud = document.getElementById('bossHud');
+            if (activeBoss) {
+                bossHud.classList.add('active');
+                document.getElementById('bossNameText').textContent = activeBoss.name;
+                document.getElementById('bossHpText').textContent = `${Math.max(0, activeBoss.hp)}/${activeBoss.maxHp}`;
+                document.getElementById('bossHpBar').style.width = `${Math.max(0, (activeBoss.hp / activeBoss.maxHp) * 100)}%`;
+            } else {
+                bossHud.classList.remove('active');
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('load', () => {
+            updateHUD();
+            loadStoryNode('ch1_node1');
+            requestAnimationFrame(gameLoop);
+        });
+    })();
+    </script>
 </body>
 </html>
