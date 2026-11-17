@@ -497,9 +497,9 @@ class BakhaController {
 
         if (isMoving || this.dodgeTimer > 0) {
             const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
-            const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+            const right = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
             const dir = new THREE.Vector3();
-            dir.addScaledVector(forward, moveZ);
+            dir.addScaledVector(forward, -moveZ);
             dir.addScaledVector(right, moveX);
             if (dir.lengthSq() > 0.001) dir.normalize();
 
@@ -524,7 +524,7 @@ class BakhaController {
             }
         }
 
-        this.group.rotation.y = this.yaw + Math.PI;
+        this.group.rotation.y = this.yaw;
 
         if (isMoving) {
             const freq = isSprinting ? 13 : 8.5;
@@ -544,8 +544,10 @@ class BakhaController {
             this.swingTimer += dt;
             const p = Math.min(1, this.swingTimer / this.swingDuration);
             const arc = Math.sin(p * Math.PI);
-            this.rightArm.rotation.x = -0.6 + arc * 2.2;
-            this.rightArm.rotation.z = -0.25 - arc * 0.75;
+            // Raise cleaver high overhead (-2.1 rad) then chop forcefully forward (-0.2 rad)
+            this.rightArm.rotation.x = -0.35 - Math.sin(p * Math.PI * 1.35) * 1.75;
+            this.rightArm.rotation.z = -0.15 - arc * 0.45;
+            this.torso.rotation.y = Math.sin(p * Math.PI) * 0.35;
 
             if (this.fppCleaver) {
                 this.fppCleaver.position.set(0.36 - arc * 0.35, -0.32 - arc * 0.08, -0.58 - arc * 0.15);
@@ -553,10 +555,12 @@ class BakhaController {
             }
             if (p >= 1) {
                 this.isSwinging = false;
+                this.torso.rotation.y = 0;
             }
         } else {
-            this.rightArm.rotation.x = this.isBlocking ? 1.15 : 0.2;
-            this.rightArm.rotation.z = this.isBlocking ? 0.55 : -0.1;
+            this.torso.rotation.y *= 0.8;
+            this.rightArm.rotation.x = this.isBlocking ? -1.15 : -0.25;
+            this.rightArm.rotation.z = this.isBlocking ? -0.55 : -0.12;
             if (this.fppCleaver) {
                 const bob = isMoving ? Math.sin(elapsed * 9) * 0.02 : Math.sin(elapsed * 2) * 0.006;
                 this.fppCleaver.position.set(0.36, -0.32 + bob, -0.58);
