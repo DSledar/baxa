@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>بەخەی قەساب 3D — یاری ئەکشن و چیرۆک (Bakha 3D Action RPG)</title>
+
+    <!-- Bootstrap 5.3.3 RTL & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="jamana-trim"></div>
+    <div class="rage-vignette" id="rageVignette"></div>
+    <div class="crosshair" id="crosshair"></div>
+
+    <!-- Fullscreen 3D WebGL Viewport -->
+    <div id="game-viewport">
+        <canvas id="webglCanvas"></canvas>
+    </div>
+
+    <!-- Top Hybrid Leather & Glassmorphic HUD -->
+    <header class="hud-top-bar hybrid-glass-panel d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fs-4">🐺</span>
+                <div>
+                    <div class="fw-bold text-warning" style="font-size: 0.98rem;">بەخەی قەساب 3D</div>
+                    <div class="text-secondary" style="font-size: 0.72rem;" id="firebaseStatusBadge">پاشەکەوتی ناوخۆیی</div>
+                </div>
+            </div>
+
+            <!-- HP, Rage, Stamina -->
+            <div class="meter-box">
+                <div class="d-flex justify-content-between small text-secondary" style="font-size: 0.72rem;">
+                    <span>تەندروستی</span><span id="hpText">100/100</span>
+                </div>
+                <div class="meter-track"><div class="meter-hp-fill" id="hpBar"></div></div>
+            </div>
+            <div class="meter-box">
+                <div class="d-flex justify-content-between small text-secondary" style="font-size: 0.72rem;">
+                    <span>تووڕەیی</span><span id="rageText">35%</span>
+                </div>
+                <div class="meter-track"><div class="meter-rage-fill" id="rageBar"></div></div>
+            </div>
+            <div class="meter-box d-none d-md-block">
+                <div class="d-flex justify-content-between small text-secondary" style="font-size: 0.72rem;">
+                    <span>وزە (Stamina)</span>
+                </div>
+                <div class="meter-track"><div class="meter-stamina-fill" id="staminaBar"></div></div>
+            </div>
+
+            <!-- Pills -->
+            <span class="copper-pill">💰 <span id="goldText">50</span></span>
+            <span class="copper-pill">🍖 <span id="meatText">3</span></span>
+            <span class="copper-pill">🛡️ شەرەف: <span id="honorText">50</span></span>
+            <span class="badge bg-dark border border-warning text-warning" id="fpsCounter">60 FPS</span>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-warning" id="camModeBtn" title="گۆڕینی کامێرا (V)">
+                <i class="bi bi-person-bounding-box"></i> سێیەم کەس (TPP)
+            </button>
+            <button class="btn btn-sm btn-warning fw-bold" id="btnMinigame">🥩 بڕینی گۆشت</button>
+            <button class="btn btn-sm btn-outline-light" id="btnInventory"><i class="bi bi-backpack"></i> کۆگا</button>
+            <button class="btn btn-sm btn-outline-light" id="btnLeaderboard"><i class="bi bi-trophy-fill text-warning"></i> ڕیزبەندی</button>
+            <button class="btn btn-sm btn-outline-success" id="btnCloudSave"><i class="bi bi-cloud-arrow-up"></i> پاشەکەوت</button>
+            <button class="btn btn-sm btn-outline-info" id="googleLoginBtn"><i class="bi bi-google"></i> چوونەژوورەوە</button>
+            <button class="btn btn-sm btn-outline-secondary text-white" id="btnAudio"><i class="bi bi-volume-mute-fill"></i></button>
+        </div>
+    </header>
+
+    <div class="pointer-lock-banner hybrid-glass-panel text-warning d-none d-lg-block">
+        WASD: ڕۆیشتن | ماوس/دوو کلیک: سووڕاندن | V: گۆڕینی FPP/TPP | Space: لێدان
+    </div>
+
+    <!-- Boss Health Bar -->
+    <div class="boss-hud hybrid-glass-panel" id="bossHud">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong class="text-danger" id="bossNameText">باوکی تاریکی</strong>
+            <span class="small text-warning fw-bold" id="bossHpText">450/450</span>
+        </div>
+        <div class="meter-track" style="height: 12px;">
+            <div class="meter-hp-fill" id="bossHpBar"></div>
+        </div>
+    </div>
+
+    <!-- Action Controls Dock -->
+    <div class="combat-controls-dock hybrid-glass-panel">
+        <button class="action-key-btn" id="btnAttack"><span>⚔️ لێدانی ساتوور</span><span class="kbd-tag">Space</span></button>
+        <button class="action-key-btn" id="btnHowl"><span>🐺 لوورەی گورگ</span><span class="kbd-tag">Q</span></button>
+        <button class="action-key-btn" id="btnRage"><span>🩸 تووڕەیی خوێناوی</span><span class="kbd-tag">R</span></button>
+        <button class="action-key-btn" id="btnHeal"><span>🍖 خواردنی گۆشت</span><span class="kbd-tag">E</span></button>
+        <button class="action-key-btn" id="btnDodge"><span>💨 خۆلادان (Dodge)</span><span class="kbd-tag">C</span></button>
+    </div>
+
+    <!-- Mobile Joystick -->
+    <div class="mobile-joystick-zone" id="mobileJoystick">
+        <div class="mobile-joystick-knob" id="mobileJoystickKnob"></div>
+    </div>
+
+    <!-- Story & Choices Dock -->
+    <section class="story-dock hybrid-glass-panel" id="storyDock">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-warning border-opacity-25 pb-2">
+            <div>
+                <span class="badge bg-warning text-dark" id="storyChapterTitle">بەشی ١</span>
+                <span class="small text-secondary ms-2" id="storySubtitle">گوندی بەرزان</span>
+            </div>
+            <button class="btn btn-sm btn-outline-warning py-0 px-2" id="toggleStoryBtn" title="بچووککردنەوە/کردنەوە">
+                <i class="bi bi-arrows-collapse"></i>
+            </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge rounded-pill bg-danger bg-opacity-75" id="storySpeaker">گێڕەرەوە</span>
+        </div>
+
+        <div class="dialogue-scroll">
+            <p class="mb-1 text-light" id="storyNarration"></p>
+            <div class="text-white" id="storyDialogue"></div>
+        </div>
+
+        <div class="d-flex flex-column gap-2" id="storyChoices"></div>
+    </section>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" style="position: fixed; top: 82px; left: 16px; z-index: 60; max-width: 320px;"></div>
+
+    <!-- Minigame Modal -->
+    <div class="modal fade" id="minigameModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content hybrid-glass-panel">
+                <div class="modal-header border-warning border-opacity-25">
+                    <h5 class="modal-title text-warning">🥩 بڕینی گۆشت لە قەسابخانەی بەرزان</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="small text-secondary">کلیک لەسەر گۆشتە هەڵواسراوەکان بکە بۆ بڕین و بەدەستهێنانی گۆشت و زێڕ!</p>
+                    <canvas id="minigameCanvas" width="600" height="300" class="w-100 rounded border border-warning border-opacity-50" style="cursor: crosshair;"></canvas>
+                    <div class="mt-3 fw-bold text-warning">خاڵەکان: <span id="miniScore">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div class="modal fade" id="inventoryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content hybrid-glass-panel">
+                <div class="modal-header border-warning border-opacity-25">
+                    <h5 class="modal-title text-warning">🎒 کۆگای بەخەی قەساب</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body"><div class="row g-3" id="inventoryGrid"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div class="modal fade" id="leaderboardModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content hybrid-glass-panel">
+                <div class="modal-header border-warning border-opacity-25">
+                    <h5 class="modal-title text-warning">🏆 ڕیزبەندی پاڵەوانان (Firebase)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-dark table-striped table-sm text-center mb-0">
+                        <thead><tr><th>#</th><th>ناو</th><th>شەرەف</th><th>کوشتن</th><th>بەش</th></tr></thead>
+                        <tbody id="leaderboardBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/shaders.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/character.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/story.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
