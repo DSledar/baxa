@@ -404,3 +404,34 @@ html, body {
     pointer-events: none;
     opacity: 0.88;
 }
+
+
+/* Bakha Portrait Avatar Ring in HUD & Story Dock */
+.bakha-avatar-ring {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(135deg, #fbbf24, #b45309, #991b1b);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.55);
+    flex-shrink: 0;
+}
+
+.bakha-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    border-radius: 50%;
+    display: block;
+}
+
+.story-speaker-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    border: 1.5px solid var(--gold);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
