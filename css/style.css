@@ -1,0 +1,406 @@
+:root {
+    --bg-void: #060302;
+    --leather-dark: rgba(20, 10, 6, 0.84);
+    --leather-deep: #120804;
+    --glass-bg: rgba(16, 12, 10, 0.58);
+    --glass-border: rgba(245, 158, 11, 0.35);
+    --copper: #b45309;
+    --copper-glow: #f59e0b;
+    --gold: #fbbf24;
+    --blood: #991b1b;
+    --blood-neon: #ef4444;
+    --cyan-neon: #38bdf8;
+    --emerald-neon: #10b981;
+    --text-main: #fbf7ee;
+    --text-muted: #cbbba6;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-void);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Tahoma, 'Noto Naskh Arabic', 'Vazirmatn', Arial, sans-serif;
+    direction: rtl;
+}
+
+/* Fullscreen 3D Viewport */
+#game-viewport {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+#webglCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+}
+
+/* Kurdish Jamadani Checkered Trim */
+.jamana-trim {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    z-index: 50;
+    background-image: repeating-linear-gradient(
+        45deg,
+        #0f172a 0px,
+        #0f172a 10px,
+        #f8fafc 10px,
+        #f8fafc 20px
+    );
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Hybrid Kurdish Leather + Dark Glassmorphic Panel */
+.hybrid-glass-panel {
+    background: linear-gradient(145deg, rgba(28, 15, 9, 0.72) 0%, rgba(10, 6, 4, 0.78) 100%);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 220, 150, 0.12);
+    border-radius: 16px;
+}
+
+.copper-pill {
+    background: linear-gradient(180deg, rgba(69, 26, 3, 0.85) 0%, rgba(28, 10, 2, 0.9) 100%);
+    border: 1px solid var(--copper-glow);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--gold);
+}
+
+/* Top HUD Bar */
+.hud-top-bar {
+    position: fixed;
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    z-index: 20;
+    padding: 10px 16px;
+    pointer-events: auto;
+}
+
+.meter-box {
+    min-width: 120px;
+}
+
+.meter-track {
+    height: 9px;
+    background: rgba(0, 0, 0, 0.65);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.meter-hp-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #dc2626, #f87171);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+    transition: width 0.25s ease;
+}
+
+.meter-rage-fill {
+    height: 100%;
+    width: 35%;
+    background: linear-gradient(90deg, #d97706, #fbbf24);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+    transition: width 0.25s ease;
+}
+
+.meter-stamina-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    transition: width 0.15s ease;
+}
+
+/* Crosshair for FPP / Action Aim */
+.crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0.75;
+    transition: transform 0.1s ease, opacity 0.2s;
+}
+
+.crosshair::before, .crosshair::after {
+    content: '';
+    position: absolute;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--copper-glow);
+}
+
+.crosshair::before {
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.crosshair::after {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+}
+
+.crosshair.hit {
+    transform: translate(-50%, -50%) scale(1.45);
+    filter: drop-shadow(0 0 8px #ef4444);
+}
+
+/* Boss Health Bar Top Center */
+.boss-hud {
+    position: fixed;
+    top: 86px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(520px, 90vw);
+    z-index: 18;
+    padding: 10px 18px;
+    display: none;
+}
+
+.boss-hud.active {
+    display: block;
+    animation: fadeInDown 0.35s ease;
+}
+
+/* Story & Dialogue Dock (Bottom Left / Center) */
+.story-dock {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: min(470px, calc(100vw - 32px));
+    max-height: 46vh;
+    z-index: 20;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.story-dock.minimized {
+    max-height: 54px;
+    overflow: hidden;
+}
+
+.dialogue-scroll {
+    max-height: 140px;
+    overflow-y: auto;
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: var(--text-main);
+    padding-left: 6px;
+}
+
+.dialogue-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.dialogue-scroll::-webkit-scrollbar-thumb {
+    background: var(--copper-glow);
+    border-radius: 10px;
+}
+
+.choice-btn-hybrid {
+    background: linear-gradient(90deg, rgba(45, 22, 12, 0.85) 0%, rgba(20, 10, 6, 0.9) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    color: var(--text-main);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-align: right;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.choice-btn-hybrid:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    transform: translateX(-4px);
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.3);
+}
+
+/* Action Controls Dock (Bottom Left) */
+.combat-controls-dock {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 20;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.action-key-btn {
+    background: rgba(20, 12, 8, 0.8);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: var(--text-main);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.action-key-btn:hover {
+    background: rgba(180, 83, 9, 0.45);
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.action-key-btn:active {
+    transform: scale(0.95);
+}
+
+.kbd-tag {
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--gold);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-family: monospace;
+}
+
+/* Mobile Touch Controls */
+.mobile-joystick-zone {
+    position: fixed;
+    bottom: 110px;
+    left: 20px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    backdrop-filter: blur(6px);
+    z-index: 22;
+    display: none;
+    touch-action: none;
+}
+
+.mobile-joystick-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--gold), var(--copper));
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+@media (max-width: 992px) {
+    .mobile-joystick-zone {
+        display: block;
+    }
+    .story-dock {
+        width: calc(100vw - 24px);
+        right: 12px;
+        bottom: 10px;
+        max-height: 36vh;
+    }
+    .combat-controls-dock {
+        bottom: auto;
+        top: 90px;
+        left: 12px;
+    }
+}
+
+/* Blood Rage Vignette */
+.rage-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 12;
+    box-shadow: inset 0 0 110px rgba(220, 38, 38, 0);
+    transition: box-shadow 0.4s ease;
+}
+
+.rage-vignette.active {
+    box-shadow: inset 0 0 130px rgba(220, 38, 38, 0.65);
+}
+
+/* Floating Damage / Notification Text */
+.floating-combat-text {
+    position: fixed;
+    pointer-events: none;
+    z-index: 40;
+    font-weight: 900;
+    font-size: 1.25rem;
+    text-shadow: 0 2px 10px #000, 0 0 15px rgba(0,0,0,0.9);
+    animation: floatDmg 1.05s ease-out forwards;
+}
+
+@keyframes floatDmg {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(0.9); }
+    30% { opacity: 1; transform: translate(-50%, -22px) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -58px) scale(1); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translate(-50%, -14px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Bootstrap Modal Dark Hybrid Override */
+.modal-content.hybrid-glass-panel {
+    background: linear-gradient(145deg, rgba(26, 13, 8, 0.94) 0%, rgba(10, 6, 4, 0.96) 100%);
+    color: var(--text-main);
+    border: 1px solid var(--copper-glow);
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Pointer Lock Prompt Banner */
+.pointer-lock-banner {
+    position: fixed;
+    top: 74px;
+    right: 16px;
+    z-index: 19;
+    font-size: 0.78rem;
+    padding: 5px 12px;
+    pointer-events: none;
+    opacity: 0.88;
+}
