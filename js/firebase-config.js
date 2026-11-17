@@ -1,13 +1,12 @@
 // Firebase Cloud Saves, Google Auth & Global Honor Leaderboard
 // Replace firebaseConfig with your own Firebase project credentials for GitHub Pages deployment.
-const FIREBASE_CONFIG = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "your-project.firebaseapp.com",
-    databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "000000000000",
-    appId: "1:000000000000:web:000000000000"
+const firebaseConfig = {
+  apiKey: "AIzaSyA59mwq_N4tPxAHOmwJPeccsgqWAfWkQrw",
+  authDomain: "baxayqasab-e1c44.firebaseapp.com",
+  projectId: "baxayqasab-e1c44",
+  storageBucket: "baxayqasab-e1c44.firebasestorage.app",
+  messagingSenderId: "61919750327",
+  appId: "1:61919750327:web:eb50624f957d5d463dc532"
 };
 
 class BakhaCloudManager {
